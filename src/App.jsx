@@ -239,14 +239,13 @@ function AppContent() {
 
 function App() {
   return (
-    <Router>
+    <Router basename={import.meta.env.BASE_URL}>
       <AuthProvider>
         <AppContent />
       </AuthProvider>
     </Router>
   );
 }
-<Router
-  basename={import.meta.env.BASE_URL}></Router>
+
 
 export default App;
