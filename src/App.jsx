@@ -246,5 +246,7 @@ function App() {
     </Router>
   );
 }
+<Router
+  basename={import.meta.env.BASE_URL}></Router>
 
 export default App;
