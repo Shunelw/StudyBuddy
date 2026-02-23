@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../utils/AuthContext';
-import { getCourseById } from '../../utils/mockData';
+import { api } from '../../utils/api';
 import { Award, Clock, CheckCircle, XCircle, ArrowLeft, ArrowRight } from 'lucide-react';
 import './Quiz.css';
 
@@ -9,8 +9,25 @@ const Quiz = () => {
     const { courseId, quizId } = useParams();
     const { user, updateUser } = useAuth();
     const navigate = useNavigate();
-    const course = getCourseById(courseId);
-    const quiz = course?.quizzes?.find(q => q.id === parseInt(quizId));
+    const [course, setCourse] = useState(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        let cancelled = false;
+        (async () => {
+            try {
+                const c = await api.courses.get(courseId);
+                if (!cancelled) setCourse(c);
+            } catch (_) {
+                if (!cancelled) setCourse(null);
+            } finally {
+                if (!cancelled) setLoading(false);
+            }
+        })();
+        return () => { cancelled = true; };
+    }, [courseId]);
+
+    const quiz = course?.quizzes?.find(q => q.id === parseInt(quizId, 10));
 
     const [currentQuestion, setCurrentQuestion] = useState(0);
     const [selectedAnswers, setSelectedAnswers] = useState({});
@@ -26,6 +43,13 @@ const Quiz = () => {
         }
     }, [timeLeft, showResults]);
 
+    if (loading) {
+        return (
+            <div className="container" style={{ padding: '4rem 0', textAlign: 'center' }}>
+                <p>Loading quiz...</p>
+            </div>
+        );
+    }
     if (!course || !quiz) {
         return (
             <div className="container" style={{ padding: '4rem 0', textAlign: 'center' }}>
@@ -56,7 +80,7 @@ const Quiz = () => {
         }
     };
 
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
         let correct = 0;
         quiz.questions.forEach((question) => {
             if (selectedAnswers[question.id] === question.correctAnswer) {
@@ -65,21 +89,19 @@ const Quiz = () => {
         });
 
         const score = Math.round((correct / quiz.questions.length) * 100);
-
-        // Save quiz result
-        const quizScores = user.quizScores || [];
         const newScore = {
             quizId: quiz.id,
             courseId: course.id,
-            score: score,
-            date: new Date().toISOString().split('T')[0]
-            // date: `2026-${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(new Date().getDate()).padStart(2, '0')}`
+            score,
+            date: new Date().toISOString().split('T')[0],
         };
 
+        try {
+            await api.quiz.submit(user.id, quiz.id, score, course.id);
+        } catch (_) {}
         updateUser({
-            quizScores: [...quizScores, newScore]
+            quizScores: [...(user.quizScores || []), newScore],
         });
-
         setShowResults(true);
     };
 

@@ -1,87 +1,53 @@
-// import React from 'react';
-// import { mockCourses } from '../../utils/mockData';
-// import CourseCard from '../../components/common/CourseCard';
-// import './AdminCourses.css';
-
-// const AdminCourses = () => {
-//     const handleEdit = (course) => {
-//         console.log('Edit course:', course);
-//     };
-
-//     const handleDelete = (course) => {
-//         console.log('Delete course:', course);
-//     };
-
-//     return (
-//         <div className="admin-page">
-//             <div className="container">
-//                 <div className="admin-header">
-//                     <h1>All Courses</h1>
-//                 </div>
-
-//                 <div className="admin-grid">
-//                     {mockCourses.map(course => (
-//                         <CourseCard
-//                             key={course.id}
-//                             course={course}
-//                             variant="admin"
-//                             viewOnly
-//                             onEdit={handleEdit}
-//                             onDelete={handleDelete}
-//                         />
-//                     ))}
-//                 </div>
-//             </div>
-//         </div>
-//     );
-// };
-
-// export default AdminCourses;
-
-import React from 'react';
-import { mockCourses } from '../../utils/mockData';
+import React, { useState, useEffect } from 'react';
+import { api } from '../../utils/api';
 import './AdminCourses.css';
 
 const AdminCourses = () => {
-    const handleEdit = (course) => {
-        console.log('Edit course:', course);
-    };
+  const [courses, setCourses] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-    const handleDelete = (course) => {
-        console.log('Delete course:', course);
-    };
+  useEffect(() => {
+    api.courses
+      .list()
+      .then((list) => setCourses(Array.isArray(list) ? list : []))
+      .catch(() => setCourses([]))
+      .finally(() => setLoading(false));
+  }, []);
 
-    return (
-        <div className="admin-page">
-            <div className="container">
-                <div className="admin-header">
-                    <h1>All Courses</h1>
-                </div>
+  const handleEdit = (course) => {
+    console.log('Edit course:', course);
+  };
 
-                <div className="admin-grid">
-                    {mockCourses.map(course => (
-                        <div key={course.id} className="admin-course-card">
-                            <h3>{course.title}</h3>
-                            <p>{course.category}</p>
-                            <p>{course.students} students</p>
+  const handleDelete = (course) => {
+    console.log('Delete course:', course);
+  };
 
-                            <div className="admin-actions">
-                                <button onClick={() => handleEdit(course)}>
-                                    Edit
-                                </button>
-                                <button
-                                    onClick={() => handleDelete(course)}
-                                    className="delete-btn"
-                                >
-                                    Delete
-                                </button>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            </div>
+  return (
+    <div className="admin-page">
+      <div className="container">
+        <div className="admin-header">
+          <h1>All Courses</h1>
         </div>
-    );
+        {loading ? (
+          <p>Loading...</p>
+        ) : (
+          <div className="admin-grid">
+            {courses.map((course) => (
+              <div key={course.id} className="admin-course-card">
+                <h3>{course.title}</h3>
+                <p>{course.category}</p>
+                <p>{course.students ?? 0} students</p>
+                <div className="admin-actions">
+                  <button onClick={() => handleEdit(course)}>Edit</button>
+                  <button onClick={() => handleDelete(course)} className="delete-btn">Delete</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
 };
 
 export default AdminCourses;

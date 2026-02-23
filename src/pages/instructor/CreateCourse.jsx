@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../utils/AuthContext';
+import { api } from '../../utils/api';
 import { ArrowLeft, Upload, Plus, X } from 'lucide-react';
 import '../student/StudentDashboard.css';
 import './CreateCourse.css';
@@ -48,11 +49,32 @@ const CreateCourse = () => {
         setLessons(lessons.filter(l => l.id !== id));
     };
 
-    const handleSubmit = (e) => {
+    const [submitting, setSubmitting] = useState(false);
+    const [submitError, setSubmitError] = useState('');
+
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        // In production, this would call an API
-        alert(`Course "${courseData.title}" created successfully with ${lessons.length} lessons!`);
-        navigate('/instructor/dashboard');
+        setSubmitting(true);
+        setSubmitError('');
+        try {
+            await api.courses.create({
+                title: courseData.title,
+                description: courseData.description,
+                category: courseData.category,
+                level: courseData.level,
+                duration: courseData.duration || '',
+                price: parseFloat(courseData.price) || 0,
+                image: courseData.image || 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=400',
+                lessons: lessons.map((l) => ({ ...l, videoUrl: l.videoUrl || '#' })),
+                instructorId: user?.id,
+                instructor: user?.name || 'Instructor',
+            });
+            navigate('/instructor/dashboard');
+        } catch (err) {
+            setSubmitError(err.message || 'Failed to create course');
+        } finally {
+            setSubmitting(false);
+        }
     };
 
     return (
@@ -272,8 +294,9 @@ const CreateCourse = () => {
                             <button type="button" onClick={() => navigate('/instructor/dashboard')} className="btn btn-outline">
                                 Cancel
                             </button>
-                            <button type="submit" className="btn btn-primary btn-lg">
-                                Create Course
+                            {submitError && <p className="auth-error" style={{ marginBottom: '1rem' }}>{submitError}</p>}
+                            <button type="submit" className="btn btn-primary btn-lg" disabled={submitting}>
+                                {submitting ? 'Creating...' : 'Create Course'}
                             </button>
                         </div>
                     </form>
