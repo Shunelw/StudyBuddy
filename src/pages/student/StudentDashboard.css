@@ -252,6 +252,76 @@
     overflow: hidden;
 }
 
+.certificate-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1.5rem;
+}
+
+.certificate-card {
+    background: var(--bg-primary);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-light);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transition: all var(--transition-base);
+}
+
+.certificate-card:hover {
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-2px);
+}
+
+.certificate-image {
+    position: relative;
+    height: 160px;
+    overflow: hidden;
+}
+
+.certificate-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.certificate-lock {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.6);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    font-size: 0.95rem;
+    backdrop-filter: blur(2px);
+}
+
+.certificate-body {
+    padding: 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.certificate-body h3 {
+    font-size: 1rem;
+    margin-bottom: 0.35rem;
+}
+
+.certificate-meta {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+.certificate-card.locked .btn {
+    opacity: 0.65;
+    cursor: not-allowed;
+}
+
 .activity-item {
     display: flex;
     align-items: center;

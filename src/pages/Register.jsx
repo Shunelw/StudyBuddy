@@ -24,7 +24,7 @@ const Register = () => {
         setError('');
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
 
         if (formData.password !== formData.confirmPassword) {
@@ -43,14 +43,22 @@ const Register = () => {
             password: formData.password
         };
 
-        register(userData, formData.role);
-
-        const dashboardRoutes = {
-            student: '/student/dashboard',
-            instructor: '/instructor/dashboard',
-            admin: '/admin/dashboard'
-        };
-        navigate(dashboardRoutes[formData.role]);
+        setError('');
+        try {
+            const success = await register(userData, formData.role);
+            if (success) {
+                const dashboardRoutes = {
+                    student: '/student/dashboard',
+                    instructor: '/instructor/dashboard',
+                    admin: '/admin/dashboard'
+                };
+                navigate(dashboardRoutes[formData.role]);
+            } else {
+                setError('Registration failed. Email may already be in use.');
+            }
+        } catch (err) {
+            setError(err.message || 'Registration failed. Please try again.');
+        }
     };
 
     return (

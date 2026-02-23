@@ -22,20 +22,23 @@ const Login = () => {
         setError('');
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-
-        const success = login(formData.email, formData.password, formData.role);
-
-        if (success) {
-            const dashboardRoutes = {
-                student: '/student/dashboard',
-                instructor: '/instructor/dashboard',
-                admin: '/admin/dashboard'
-            };
-            navigate(dashboardRoutes[formData.role]);
-        } else {
-            setError('Invalid credentials. Please try again.');
+        setError('');
+        try {
+            const success = await login(formData.email, formData.password, formData.role);
+            if (success) {
+                const dashboardRoutes = {
+                    student: '/student/dashboard',
+                    instructor: '/instructor/dashboard',
+                    admin: '/admin/dashboard'
+                };
+                navigate(dashboardRoutes[formData.role]);
+            } else {
+                setError('Invalid credentials. Please try again.');
+            }
+        } catch (err) {
+            setError(err.message || 'Invalid credentials. Please try again.');
         }
     };
 

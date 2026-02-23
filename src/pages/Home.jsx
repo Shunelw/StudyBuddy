@@ -1,12 +1,15 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { BookOpen, Users, Award, TrendingUp, CheckCircle, Star } from 'lucide-react';
-import { mockCourses } from '../utils/mockData';
+import { api } from '../utils/api';
 import CourseCard from '../components/common/CourseCard';
 import './Home.css';
 
 const Home = () => {
-    const featuredCourses = mockCourses.slice(0, 4);
+    const [featuredCourses, setFeaturedCourses] = useState([]);
+    useEffect(() => {
+        api.courses.list().then((list) => setFeaturedCourses(Array.isArray(list) ? list.slice(0, 4) : [])).catch(() => setFeaturedCourses([]));
+    }, []);
 
     const features = [
         {
@@ -63,7 +66,7 @@ const Home = () => {
                                     Get Started Free
                                     <TrendingUp size={20} />
                                 </Link>
-                                <Link to="/courses" className="btn btn-outline btn-lg">
+                                <Link to="/student/courses" className="btn btn-outline btn-lg">
                                     Explore Courses
                                 </Link>
                             </div>
@@ -146,17 +149,14 @@ const Home = () => {
 
                     <div className="courses-grid">
                         {featuredCourses.map((course, index) => (
-                            <div
-                                key={course.id}
-                                style={{ animationDelay: `${index * 0.1}s` }}
-                            >
+                            <div key={course.id} style={{ animationDelay: `${index * 0.1}s` }}>
                                 <CourseCard course={course} />
                             </div>
                         ))}
                     </div>
 
                     <div className="section-cta">
-                        <Link to="/courses" className="btn btn-primary btn-lg">
+                        <Link to="/student/courses" className="btn btn-primary btn-lg">
                             View All Courses
                             <TrendingUp size={20} />
                         </Link>
