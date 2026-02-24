@@ -1,15 +1,19 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { mockQuestions } from '../../utils/mockData';
+import { apiGetQuestions, apiAnswerQuestion } from '../../utils/api';
 import './InstructorQA.css';
 
 const InstructorQA = () => {
-    const [questions, setQuestions] = useState(mockQuestions);
+    const [questions, setQuestions] = useState([]);
     const [activeId, setActiveId] = useState(null);
     const [answerText, setAnswerText] = useState('');
 
     const [searchParams] = useSearchParams();
     const focusedQuestionId = searchParams.get('questionId');
+
+    useEffect(() => {
+        apiGetQuestions().then(setQuestions).catch(console.error);
+    }, []);
 
     // Auto-open answer box if coming from dashboard
     useEffect(() => {
@@ -18,16 +22,21 @@ const InstructorQA = () => {
         }
     }, [focusedQuestionId]);
 
-    const submitAnswer = (id) => {
-        setQuestions(prev =>
-            prev.map(q =>
-                q.id === id
-                    ? { ...q, answer: answerText, status: 'answered' }
-                    : q
-            )
-        );
-        setActiveId(null);
-        setAnswerText('');
+    const submitAnswer = async (id) => {
+        try {
+            await apiAnswerQuestion(id, answerText);
+            setQuestions(prev =>
+                prev.map(q =>
+                    q.id === id
+                        ? { ...q, answer: answerText, status: 'answered' }
+                        : q
+                )
+            );
+            setActiveId(null);
+            setAnswerText('');
+        } catch (err) {
+            alert('Failed to submit answer: ' + err.message);
+        }
     };
 
     const pending = questions.filter(q => q.status === 'pending');
@@ -51,7 +60,7 @@ const InstructorQA = () => {
                             <h3>{q.studentName}</h3>
                             <span className="qa-course">{q.courseName}</span>
                         </div>
-                        <span className="qa-date">{q.date}</span>
+                        <span className="qa-date">{new Date(q.date).toLocaleDateString()}</span>
                     </div>
 
                     <p className="qa-question">{q.question}</p>

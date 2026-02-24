@@ -1,51 +1,42 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../utils/AuthContext';
+import { apiGetQuestions, apiAskQuestion, apiGetCourses } from '../../utils/api';
 import { MessageCircle, Send } from 'lucide-react';
-import './StudentQA.css'; // optional, can skip for now
-
-const STORAGE_KEY = 'studybuddy_qa';
+import './StudentQA.css';
 
 const StudentQA = () => {
     const { user } = useAuth();
     const [question, setQuestion] = useState('');
     const [qaList, setQaList] = useState([]);
+    const [selectedCourse, setSelectedCourse] = useState('');
+    const [courses, setCourses] = useState([]);
 
     useEffect(() => {
-        const stored = localStorage.getItem(STORAGE_KEY);
-        if (stored) {
-            setQaList(JSON.parse(stored));
+        // Load courses for the dropdown
+        apiGetCourses().then(data => {
+            const enrolled = data.filter(c => (user.enrolledCourses || []).includes(c.id));
+            setCourses(enrolled);
+            if (enrolled.length > 0) setSelectedCourse(enrolled[0].id);
+        }).catch(console.error);
+
+        // Load existing questions
+        apiGetQuestions({ studentId: user.id })
+            .then(setQaList)
+            .catch(console.error);
+    }, [user.id]);
+
+    const handleAskQuestion = async () => {
+        if (!question.trim() || !selectedCourse) return;
+
+        try {
+            await apiAskQuestion(user.id, selectedCourse, question);
+            // Refresh questions
+            const updated = await apiGetQuestions({ studentId: user.id });
+            setQaList(updated);
+            setQuestion('');
+        } catch (err) {
+            console.error('Failed to ask question:', err);
         }
-    }, []);
-
-    const newQuestion = {
-        id: Date.now(),
-        author: user.name,
-        role: user.role,
-        question,
-        answers: [],
-        status: 'waiting', // waiting | solved
-        createdAt: new Date().toISOString().split('T')[0]
-    };
-
-    const saveQA = (data) => {
-        setQaList(data);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-    };
-
-    const handleAskQuestion = () => {
-        if (!question.trim()) return;
-
-        const newQuestion = {
-            id: Date.now(),
-            author: user.name,
-            role: user.role,
-            question,
-            answers: [],
-            createdAt: new Date().toISOString().split('T')[0]
-        };
-
-        saveQA([newQuestion, ...qaList]);
-        setQuestion('');
     };
 
     return (
@@ -55,6 +46,17 @@ const StudentQA = () => {
 
             {/* Ask Question */}
             <div className="qa-ask-box">
+                {courses.length > 0 && (
+                    <select
+                        value={selectedCourse}
+                        onChange={(e) => setSelectedCourse(Number(e.target.value))}
+                        style={{ marginBottom: '0.5rem', width: '100%', padding: '0.5rem' }}
+                    >
+                        {courses.map(c => (
+                            <option key={c.id} value={c.id}>{c.title}</option>
+                        ))}
+                    </select>
+                )}
                 <textarea
                     placeholder="Ask a question..."
                     value={question}
@@ -73,7 +75,6 @@ const StudentQA = () => {
                 )}
 
                 {qaList.map((item) => (
-                    // <div key={item.id} className="qa-item">
                     <div
                         key={item.id}
                         className={`qa-item ${item.status}`}
@@ -81,19 +82,18 @@ const StudentQA = () => {
                         <div className="qa-question">
                             <MessageCircle size={18} />
                             <div>
-                                <strong>{item.author}</strong>
-                                <span> • {item.createdAt}</span>
+                                <strong>{item.studentName || user.name}</strong>
+                                <span> • {item.courseName}</span>
+                                <span> • {new Date(item.date).toLocaleDateString()}</span>
                                 <p>{item.question}</p>
                             </div>
                         </div>
 
-                        {item.answers.length > 0 && (
+                        {item.answer && (
                             <div className="qa-answers">
-                                {item.answers.map((ans, idx) => (
-                                    <div key={idx} className="qa-answer">
-                                        <strong>{ans.author}:</strong> {ans.text}
-                                    </div>
-                                ))}
+                                <div className="qa-answer">
+                                    <strong>Instructor:</strong> {item.answer}
+                                </div>
                             </div>
                         )}
                     </div>

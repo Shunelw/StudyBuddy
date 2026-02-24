@@ -22,10 +22,10 @@ const Login = () => {
         setError('');
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
 
-        const success = login(formData.email, formData.password, formData.role);
+        const success = await login(formData.email, formData.password, formData.role);
 
         if (success) {
             const dashboardRoutes = {

@@ -1,7 +1,8 @@
 import { useNavigate } from 'react-router-dom';
 import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../utils/AuthContext';
-import { mockUsers, mockCourses, mockSystemStats, mockCategories, mockReports } from '../../utils/mockData';
+import { apiGetStats, apiGetReports, apiGetUsers } from '../../utils/api';
 import {
     Users, BookOpen, TrendingUp, DollarSign,
     AlertCircle, CheckCircle, Activity, Award
@@ -11,47 +12,51 @@ import './AdminDashboard.css';
 
 const AdminDashboard = () => {
     const { user } = useAuth();
-    const stats = mockSystemStats;
     const navigate = useNavigate();
+    const [stats, setStats] = useState({ totalUsers: 0, totalCourses: 0, totalEnrollments: 0, activeUsers: 0, revenue: 0, completionRate: 0 });
+    const [reports, setReports] = useState([]);
+    const [users, setUsers] = useState([]);
 
-    const totalUsers = Object.values(mockUsers).reduce((acc, arr) => acc + arr.length, 0);
-    const pendingReports = mockReports.filter(r => r.status === 'pending').length;
+    useEffect(() => {
+        apiGetStats().then(setStats).catch(console.error);
+        apiGetReports().then(setReports).catch(console.error);
+        apiGetUsers().then(setUsers).catch(console.error);
+    }, []);
+
+    const pendingReports = reports.filter(r => r.status === 'pending').length;
+    const totalUsers = users.length || stats.totalUsers;
+
+    const userBreakdown = [
+        { label: 'Students', count: users.filter(u => u.role === 'student').length, color: 'var(--primary)' },
+        { label: 'Instructors', count: users.filter(u => u.role === 'instructor').length, color: 'var(--success)' },
+        { label: 'Admins', count: users.filter(u => u.role === 'admin').length, color: 'var(--warning)' }
+    ];
 
     const systemStats = [
         {
             icon: Users,
             label: 'Total Users',
             value: stats.totalUsers,
-            // change: '+12%',
             color: 'primary'
         },
         {
             icon: BookOpen,
             label: 'Total Courses',
             value: stats.totalCourses,
-            // change: '+8%',
             color: 'success'
         },
         {
             icon: TrendingUp,
             label: 'Enrollments',
             value: stats.totalEnrollments,
-            // change: '+23%',
             color: 'warning'
         },
         {
             icon: DollarSign,
             label: 'Revenue',
             value: `$${(stats.revenue / 1000).toFixed(1)}k`,
-            // change: '+15%',
             color: 'accent'
         }
-    ];
-
-    const userBreakdown = [
-        { label: 'Students', count: mockUsers.students.length, color: 'var(--primary)' },
-        { label: 'Instructors', count: mockUsers.instructors.length, color: 'var(--success)' },
-        { label: 'Admins', count: mockUsers.admins.length, color: 'var(--warning)' }
     ];
 
     return (
@@ -112,38 +117,18 @@ const AdminDashboard = () => {
                                         <div
                                             className="breakdown-fill"
                                             style={{
-                                                width: `${(item.count / totalUsers) * 100}%`,
+                                                width: `${totalUsers > 0 ? (item.count / totalUsers) * 100 : 0}%`,
                                                 background: item.color
                                             }}
                                         ></div>
                                     </div>
                                     <p className="breakdown-percentage">
-                                        {Math.round((item.count / totalUsers) * 100)}% of total users
+                                        {totalUsers > 0 ? Math.round((item.count / totalUsers) * 100) : 0}% of total users
                                     </p>
                                 </div>
                             ))}
                         </div>
                     </section>
-
-                    {/* Course Categories */}
-                    {/* <section className="section">
-                        <div className="section-title">
-                            <h2>Course Categories</h2>
-                            <a href="/admin/courses" className="view-all">Manage Courses</a>
-                        </div>
-
-                        <div className="categories-grid">
-                            {mockCategories.map((category) => (
-                                <div key={category.id} className="category-card">
-                                    <BookOpen size={24} />
-                                    <div>
-                                        <h4>{category.name}</h4>
-                                        <p>{category.count} courses</p>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </section> */}
 
                     {/* Reports & Alerts */}
                     <section className="section">
@@ -155,7 +140,7 @@ const AdminDashboard = () => {
                         </div>
 
                         <div className="reports-list">
-                            {mockReports.slice(0, 5).map((report) => (
+                            {reports.slice(0, 5).map((report) => (
                                 <div key={report.id} className={`report-item ${report.status}`}>
                                     <div className="report-icon">
                                         {report.status === 'pending' ? (
@@ -174,7 +159,7 @@ const AdminDashboard = () => {
                                         <p>{report.description}</p>
                                         <div className="report-meta">
                                             <span>Reported by: {report.userName}</span>
-                                            <span>{report.date}</span>
+                                            <span>{new Date(report.date).toLocaleDateString()}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -206,12 +191,12 @@ const AdminDashboard = () => {
                             <div className="health-card">
                                 <div className="health-header">
                                     <h3>Active Users</h3>
-                                    <span className="health-value">{Math.round((stats.activeUsers / stats.totalUsers) * 100)}%</span>
+                                    <span className="health-value">{stats.totalUsers > 0 ? Math.round((stats.activeUsers / stats.totalUsers) * 100) : 0}%</span>
                                 </div>
                                 <div className="health-bar">
                                     <div
                                         className="health-fill"
-                                        style={{ width: `${(stats.activeUsers / stats.totalUsers) * 100}%` }}
+                                        style={{ width: `${stats.totalUsers > 0 ? (stats.activeUsers / stats.totalUsers) * 100 : 0}%` }}
                                     ></div>
                                 </div>
                                 <p>Users active in last 30 days</p>

@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../utils/AuthContext';
-import { getCourseById, getStudentProgress } from '../../utils/mockData';
+import { apiGetCourse, apiEnrollCourse, apiCompleteLesson } from '../../utils/api';
 import {
     BookOpen, Play, Clock, Users, Star, CheckCircle,
     Lock, Award, ArrowLeft, Download
@@ -12,9 +12,20 @@ const CourseView = () => {
     const { courseId } = useParams();
     const { user, updateUser } = useAuth();
     const navigate = useNavigate();
-    const course = getCourseById(courseId);
-
+    const [course, setCourse] = useState(null);
+    const [loading, setLoading] = useState(true);
     const [selectedLesson, setSelectedLesson] = useState(null);
+
+    useEffect(() => {
+        apiGetCourse(courseId).then(data => {
+            setCourse(data);
+            setLoading(false);
+        }).catch(() => setLoading(false));
+    }, [courseId]);
+
+    if (loading) {
+        return <div className="container" style={{ padding: '4rem 0', textAlign: 'center' }}><h2>Loading...</h2></div>;
+    }
 
     if (!course) {
         return (
@@ -28,16 +39,25 @@ const CourseView = () => {
     }
 
     const isEnrolled = user.enrolledCourses?.includes(course.id);
-    const progress = getStudentProgress(user.id, course.id);
     const completedLessonIds = user.completedLessons || [];
+    const completedCount = course.lessons.filter(l => completedLessonIds.includes(l.id)).length;
+    const totalLessons = course.lessons.length;
+    const progress = {
+        completed: completedCount,
+        total: totalLessons,
+        percentage: totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0
+    };
 
-    const handleEnroll = () => {
+    const handleEnroll = async () => {
         if (course.price === 0 || window.confirm(`Enroll in "${course.title}" for $${course.price}?`)) {
-            const enrolledCourses = user.enrolledCourses || [];
-            updateUser({
-                enrolledCourses: [...enrolledCourses, course.id]
-            });
-            alert('Successfully enrolled! You can now access all lessons.');
+            try {
+                await apiEnrollCourse(course.id, user.id);
+                const enrolledCourses = user.enrolledCourses || [];
+                updateUser({ enrolledCourses: [...enrolledCourses, course.id] });
+                alert('Successfully enrolled! You can now access all lessons.');
+            } catch (err) {
+                alert(err.message);
+            }
         }
     };
 
@@ -49,12 +69,15 @@ const CourseView = () => {
         setSelectedLesson(lesson);
     };
 
-    const handleCompleteLesson = (lessonId) => {
+    const handleCompleteLesson = async (lessonId) => {
         if (!completedLessonIds.includes(lessonId)) {
-            updateUser({
-                completedLessons: [...completedLessonIds, lessonId]
-            });
-            alert('Lesson marked as complete!');
+            try {
+                await apiCompleteLesson(course.id, user.id, lessonId);
+                updateUser({ completedLessons: [...completedLessonIds, lessonId] });
+                alert('Lesson marked as complete!');
+            } catch (err) {
+                alert(err.message);
+            }
         }
     };
 

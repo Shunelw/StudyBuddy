@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../utils/AuthContext';
-import { getEnrolledCourses, getStudentProgress } from '../../utils/mockData';
+import { apiGetCourses } from '../../utils/api';
 import { BookOpen, Award, TrendingUp, Clock, CheckCircle } from 'lucide-react';
 import './StudentDashboard.css';
 
@@ -12,7 +12,23 @@ const formatQuizDate = (date) => {
 
 const StudentDashboard = () => {
     const { user } = useAuth();
-    const enrolledCourses = getEnrolledCourses(user.id);
+    const [enrolledCourses, setEnrolledCourses] = useState([]);
+
+    useEffect(() => {
+        apiGetCourses().then(courses => {
+            const enrolled = courses.filter(c => (user.enrolledCourses || []).includes(c.id));
+            setEnrolledCourses(enrolled);
+        }).catch(console.error);
+    }, [user.enrolledCourses]);
+
+    const getStudentProgress = (studentId, courseId) => {
+        const course = enrolledCourses.find(c => c.id === courseId);
+        if (!course) return { completed: 0, total: 0, percentage: 0 };
+        const completedLessons = course.lessons.filter(l => (user.completedLessons || []).includes(l.id)).length;
+        const totalLessons = course.lessons.length;
+        const percentage = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
+        return { completed: completedLessons, total: totalLessons, percentage };
+    };
 
     const stats = [
         {

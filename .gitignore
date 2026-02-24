@@ -22,3 +22,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Backend
+.env.local
+backend/node_modules
+backend/.next

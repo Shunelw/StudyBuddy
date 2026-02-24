@@ -159,9 +159,9 @@
 // export default Courses;
 
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../utils/AuthContext';
-import { mockCourses, mockCategories } from '../../utils/mockData';
+import { apiGetCourses, apiGetCategories } from '../../utils/api';
 import CourseCard from '../../components/common/CourseCard';
 import EnrollmentModal from '../../pages/student/EnrollmentModal';
 import { Search, Filter, BookOpen } from 'lucide-react';
@@ -175,11 +175,16 @@ const Courses = () => {
     const [selectedLevel, setSelectedLevel] = useState('All');
     const [enrollingCourse, setEnrollingCourse] = useState(null);
 
-    // SAFELY handle undefined user
     const enrolledCourseIds = user?.enrolledCourses || [];
+    const [allCourses, setAllCourses] = useState([]);
+    const [categories, setCategories] = useState([]);
 
+    useEffect(() => {
+        apiGetCourses().then(setAllCourses).catch(console.error);
+        apiGetCategories().then(setCategories).catch(console.error);
+    }, []);
 
-    const safeCourses = Array.isArray(mockCourses) ? mockCourses : [];
+    const safeCourses = allCourses;
 
     const handleEnroll = (courseId) => {
         const course = safeCourses.find(c => c.id === courseId);
@@ -244,7 +249,7 @@ const Courses = () => {
                                 onChange={(e) => setSelectedCategory(e.target.value)}
                             >
                                 <option value="All">All Categories</option>
-                                {(mockCategories || []).map(cat => (
+                                {categories.map(cat => (
                                     <option key={cat.id} value={cat.name}>
                                         {cat.name}
                                     </option>

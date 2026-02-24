@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../utils/AuthContext';
-import { getCourseById } from '../../utils/mockData';
+import { apiGetCourse, apiSubmitQuiz } from '../../utils/api';
 import { Award, Clock, CheckCircle, XCircle, ArrowLeft, ArrowRight } from 'lucide-react';
 import './Quiz.css';
 
@@ -9,13 +9,23 @@ const Quiz = () => {
     const { courseId, quizId } = useParams();
     const { user, updateUser } = useAuth();
     const navigate = useNavigate();
-    const course = getCourseById(courseId);
-    const quiz = course?.quizzes?.find(q => q.id === parseInt(quizId));
+    const [course, setCourse] = useState(null);
+    const [quiz, setQuiz] = useState(null);
+    const [loading, setLoading] = useState(true);
 
     const [currentQuestion, setCurrentQuestion] = useState(0);
     const [selectedAnswers, setSelectedAnswers] = useState({});
     const [showResults, setShowResults] = useState(false);
     const [timeLeft, setTimeLeft] = useState(1800); // 30 minutes
+
+    useEffect(() => {
+        apiGetCourse(courseId).then(data => {
+            setCourse(data);
+            const foundQuiz = data?.quizzes?.find(q => q.id === parseInt(quizId));
+            setQuiz(foundQuiz || null);
+            setLoading(false);
+        }).catch(() => setLoading(false));
+    }, [courseId, quizId]);
 
     React.useEffect(() => {
         if (!showResults && timeLeft > 0) {
@@ -25,6 +35,10 @@ const Quiz = () => {
             handleSubmit();
         }
     }, [timeLeft, showResults]);
+
+    if (loading) {
+        return <div className="container" style={{ padding: '4rem 0', textAlign: 'center' }}><h2>Loading...</h2></div>;
+    }
 
     if (!course || !quiz) {
         return (
@@ -56,7 +70,7 @@ const Quiz = () => {
         }
     };
 
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
         let correct = 0;
         quiz.questions.forEach((question) => {
             if (selectedAnswers[question.id] === question.correctAnswer) {
@@ -66,14 +80,19 @@ const Quiz = () => {
 
         const score = Math.round((correct / quiz.questions.length) * 100);
 
-        // Save quiz result
+        // Save quiz result to backend
+        try {
+            await apiSubmitQuiz(quiz.id, user.id, score);
+        } catch (err) {
+            console.error('Failed to submit quiz:', err);
+        }
+
         const quizScores = user.quizScores || [];
         const newScore = {
             quizId: quiz.id,
             courseId: course.id,
             score: score,
             date: new Date().toISOString().split('T')[0]
-            // date: `2026-${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(new Date().getDate()).padStart(2, '0')}`
         };
 
         updateUser({

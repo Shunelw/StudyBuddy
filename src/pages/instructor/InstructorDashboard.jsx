@@ -1,15 +1,22 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../utils/AuthContext';
-import { getInstructorCourses, mockQuestions } from '../../utils/mockData';
+import { apiGetCourses, apiGetQuestions } from '../../utils/api';
 import { BookOpen, Users, MessageCircle, Award, Plus, TrendingUp } from 'lucide-react';
 import '../student/StudentDashboard.css';
 import './InstructorDashboard.css';
 
 const InstructorDashboard = () => {
     const { user } = useAuth();
-    const instructorCourses = getInstructorCourses(user.id);
-    const pendingQuestions = mockQuestions.filter(q => q.status === 'pending');
+    const [instructorCourses, setInstructorCourses] = useState([]);
+    const [pendingQuestions, setPendingQuestions] = useState([]);
+
+    useEffect(() => {
+        apiGetCourses(user.id).then(setInstructorCourses).catch(console.error);
+        apiGetQuestions().then(qs => {
+            setPendingQuestions(qs.filter(q => q.status === 'pending'));
+        }).catch(console.error);
+    }, [user.id]);
 
     const stats = [
         {

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { authenticateUser } from './mockData';
+import { apiLogin, apiRegister } from './api';
 
 const AuthContext = createContext();
 
@@ -15,61 +15,41 @@ export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-    // useEffect(() => {
-    //     // Check if user is stored in localStorage
-    //     const storedUser = localStorage.getItem('studybuddy_user');
-    //     if (storedUser) {
-    //         const userData = JSON.parse(storedUser);
-    //         setUser(userData);
-    //         setIsAuthenticated(true);
-    //     }
-    // }, []);
     useEffect(() => {
         const storedUser = localStorage.getItem('studybuddy_user');
         if (storedUser) {
             const userData = JSON.parse(storedUser);
-
-            // FORCE completed lessons here
-            userData.completedLessons = [1, 2];
-
             setUser(userData);
             setIsAuthenticated(true);
-            localStorage.setItem('studybuddy_user', JSON.stringify(userData));
         }
     }, []);
 
-    const login = (email, password, role) => {
-        const authenticatedUser = authenticateUser(email, password, role);
-
-        if (authenticatedUser) {
-            const userData = {
-                ...authenticatedUser,
-                role
-            };
-            setUser(userData);
+    const login = async (email, password, role) => {
+        try {
+            const userData = await apiLogin(email, password, role);
+            const userWithRole = { ...userData, role };
+            setUser(userWithRole);
             setIsAuthenticated(true);
-            localStorage.setItem('studybuddy_user', JSON.stringify(userData));
+            localStorage.setItem('studybuddy_user', JSON.stringify(userWithRole));
             return true;
+        } catch (error) {
+            console.error('Login failed:', error.message);
+            return false;
         }
-        return false;
     };
 
-    const register = (userData, role) => {
-        // Mock registration - in real app, this would call an API
-        const newUser = {
-            id: Date.now(),
-            ...userData,
-            role,
-            enrolledCourses: [],
-            completedLessons: [],
-            quizScores: [],
-            certificates: []
-        };
-
-        setUser(newUser);
-        setIsAuthenticated(true);
-        localStorage.setItem('studybuddy_user', JSON.stringify(newUser));
-        return true;
+    const register = async (userData, role) => {
+        try {
+            const newUser = await apiRegister(userData.name, userData.email, userData.password, role);
+            const userWithRole = { ...newUser, role };
+            setUser(userWithRole);
+            setIsAuthenticated(true);
+            localStorage.setItem('studybuddy_user', JSON.stringify(userWithRole));
+            return true;
+        } catch (error) {
+            console.error('Registration failed:', error.message);
+            return false;
+        }
     };
 
     const logout = () => {

@@ -1,17 +1,21 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { mockReports } from '../../utils/mockData';
+import { apiGetReports } from '../../utils/api';
 import { AlertCircle, CheckCircle } from 'lucide-react';
-// import './AdminDashboard.css';
 import './AdminReports.css';
 
 const AdminReports = () => {
     const [params] = useSearchParams();
     const statusFilter = params.get('status');
+    const [allReports, setAllReports] = useState([]);
+
+    useEffect(() => {
+        apiGetReports().then(setAllReports).catch(console.error);
+    }, []);
 
     const reports = statusFilter
-        ? mockReports.filter(r => r.status === statusFilter)
-        : mockReports;
+        ? allReports.filter(r => r.status === statusFilter)
+        : allReports;
 
     return (
         <div className="dashboard-page">
@@ -19,7 +23,6 @@ const AdminReports = () => {
                 <div className="admin-header">
                     <h1>Reports & Complaints</h1>
                 </div>
-                {/* <h1>Reports & Complaints</h1> */}
 
                 <div className="reports-list">
                     {reports.map(report => (
@@ -40,7 +43,7 @@ const AdminReports = () => {
                                 <p>{report.description}</p>
                                 <div className="report-meta">
                                     <span>{report.userName}</span>
-                                    <span>{report.date}</span>
+                                    <span>{new Date(report.date).toLocaleDateString()}</span>
                                 </div>
                             </div>
                         </div>

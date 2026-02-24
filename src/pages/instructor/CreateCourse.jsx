@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../utils/AuthContext';
+import { apiCreateCourse } from '../../utils/api';
 import { ArrowLeft, Upload, Plus, X } from 'lucide-react';
 import '../student/StudentDashboard.css';
 import './CreateCourse.css';
@@ -48,11 +49,20 @@ const CreateCourse = () => {
         setLessons(lessons.filter(l => l.id !== id));
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        // In production, this would call an API
-        alert(`Course "${courseData.title}" created successfully with ${lessons.length} lessons!`);
-        navigate('/instructor/dashboard');
+        try {
+            await apiCreateCourse({
+                ...courseData,
+                instructorId: user.id,
+                price: parseFloat(courseData.price) || 0,
+                lessons,
+            });
+            alert(`Course "${courseData.title}" created successfully with ${lessons.length} lessons!`);
+            navigate('/instructor/dashboard');
+        } catch (err) {
+            alert('Failed to create course: ' + err.message);
+        }
     };
 
     return (

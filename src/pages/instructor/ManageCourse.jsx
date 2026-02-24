@@ -1,21 +1,24 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
-import { getInstructorCourses } from '../../utils/mockData';
+import { apiGetCourse } from '../../utils/api';
 import './ManageCourse.css';
 
 const ManageCourse = () => {
-    const { courseId } = useParams();
-    const navigate = useNavigate();
-
-    // mock instructor = id 1
-    const course = getInstructorCourses(1).find(
-        c => c.id === Number(courseId)
-    );
-
+    const [course, setCourse] = useState(null);
+    const [loading, setLoading] = useState(true);
     const [tab, setTab] = useState('overview');
-    const [lessons, setLessons] = useState(course?.lessons || []);
-    const [quizzes, setQuizzes] = useState(course?.quizzes || []);
+    const [lessons, setLessons] = useState([]);
+    const [quizzes, setQuizzes] = useState([]);
+
+    useEffect(() => {
+        apiGetCourse(courseId).then(data => {
+            setCourse(data);
+            setLessons(data?.lessons || []);
+            setQuizzes(data?.quizzes || []);
+            setLoading(false);
+        }).catch(() => setLoading(false));
+    }, [courseId]);
 
     const [lessonForm, setLessonForm] = useState({
         title: '',
@@ -27,6 +30,10 @@ const ManageCourse = () => {
     const [quizForm, setQuizForm] = useState({
         title: ''
     });
+
+    if (loading) {
+        return <p>Loading...</p>;
+    }
 
     if (!course) {
         return <p>Course not found</p>;
