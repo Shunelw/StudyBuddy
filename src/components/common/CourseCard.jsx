@@ -9,7 +9,7 @@ const CourseCard = ({ course, enrollButton = false, onEnroll, viewOnly = false }
             <div className="course-image-wrapper">
                 <img src={course.image} alt={course.title} className="course-image" />
                 <div className="course-level-badge">
-                    <span className={`level-badge level-${course.level.toLowerCase()}`}>
+                    <span className={`level-badge level-${(course.level || '').toLowerCase()}`}>
                         {course.level}
                     </span>
                 </div>
@@ -25,7 +25,7 @@ const CourseCard = ({ course, enrollButton = false, onEnroll, viewOnly = false }
                 <div className="course-card-footer">
                     <div className="course-instructor-row">
                         <div className="instructor-avatar-small">
-                            {course.instructor.charAt(0)}
+                            {(course.instructor || '?').charAt(0)}
                         </div>
                         <span className="instructor-name-small">{course.instructor}</span>
                     </div>

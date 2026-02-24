@@ -17,6 +17,7 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import StudentQA from './pages/student/StudentQA';
 import ManageCourse from './pages/instructor/ManageCourse';
 import InstructorQA from './pages/instructor/InstructorQA';
+import InstructorStudents from './pages/instructor/InstructorStudents';
 import AdminCourses from './pages/admin/AdminCourses';
 import AdminReports from './pages/admin/AdminReports';
 import AdminUsers from "./pages/admin/AdminUsers";
@@ -149,6 +150,14 @@ function AppContent() {
           element={
             <ProtectedRoute allowedRoles={['instructor']}>
               <CreateCourse />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/instructor/students"
+          element={
+            <ProtectedRoute allowedRoles={['instructor']}>
+              <InstructorStudents />
             </ProtectedRoute>
           }
         />

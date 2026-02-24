@@ -45,17 +45,13 @@ const Register = () => {
 
         setError('');
         try {
-            const success = await register(userData, formData.role);
-            if (success) {
-                const dashboardRoutes = {
-                    student: '/student/dashboard',
-                    instructor: '/instructor/dashboard',
-                    admin: '/admin/dashboard'
-                };
-                navigate(dashboardRoutes[formData.role]);
-            } else {
-                setError('Registration failed. Email may already be in use.');
-            }
+            await register(userData, formData.role);
+            const dashboardRoutes = {
+                student: '/student/dashboard',
+                instructor: '/instructor/dashboard',
+                admin: '/admin/dashboard'
+            };
+            navigate(dashboardRoutes[formData.role]);
         } catch (err) {
             setError(err.message || 'Registration failed. Please try again.');
         }

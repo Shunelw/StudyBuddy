@@ -36,6 +36,7 @@ const EnrollmentModal = ({ course, onClose }) => {
 
     const handlePayment = (e) => {
         e.preventDefault();
+        setLoading(true);
         setTimeout(() => completeEnrollment(), 1000);
     };
 
@@ -83,7 +84,7 @@ const EnrollmentModal = ({ course, onClose }) => {
                                     <div className="summary-stats">
                                         <span>{course.duration}</span>
                                         <span>•</span>
-                                        <span>{course.lessons.length} lessons</span>
+                                        <span>{(course.lessons || []).length} lessons</span>
                                         <span>•</span>
                                         <span>{course.level}</span>
                                     </div>
@@ -99,7 +100,7 @@ const EnrollmentModal = ({ course, onClose }) => {
                                     </li>
                                     <li>
                                         <CheckCircle size={20} />
-                                        <span>{course.lessons.length} video lessons</span>
+                                        <span>{(course.lessons || []).length} video lessons</span>
                                     </li>
                                     <li>
                                         <CheckCircle size={20} />
@@ -225,8 +226,8 @@ const EnrollmentModal = ({ course, onClose }) => {
                                 <button type="button" className="btn btn-outline" onClick={() => setStep(1)}>
                                     Back
                                 </button>
-                                <button type="submit" className="btn btn-primary btn-lg">
-                                    Pay ${course.price}
+                                <button type="submit" className="btn btn-primary btn-lg" disabled={loading}>
+                                    {loading ? 'Processing...' : `Pay $${course.price}`}
                                 </button>
                             </div>
                         </div>

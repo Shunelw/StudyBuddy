@@ -16,9 +16,10 @@ const InstructorQA = () => {
   const focusedQuestionId = searchParams.get('questionId');
 
   useEffect(() => {
+    if (!user?.id) { setLoading(false); return; }
     let cancelled = false;
     api.qa
-      .list()
+      .list({ instructorId: user.id })
       .then((list) => {
         if (!cancelled) setQuestions(Array.isArray(list) ? list : []);
       })
@@ -29,7 +30,7 @@ const InstructorQA = () => {
         if (!cancelled) setLoading(false);
       });
     return () => { cancelled = true; };
-  }, []);
+  }, [user?.id]);
 
   useEffect(() => {
     if (focusedQuestionId) setActiveId(focusedQuestionId);
@@ -40,7 +41,7 @@ const InstructorQA = () => {
     setSending(true);
     try {
       await api.qa.answer(id, answerText.trim(), user?.name || 'Instructor', 'instructor');
-      const list = await api.qa.list();
+      const list = await api.qa.list({ instructorId: user.id });
       setQuestions(Array.isArray(list) ? list : []);
       setActiveId(null);
       setAnswerText('');
@@ -72,7 +73,7 @@ const InstructorQA = () => {
 
           <p className="qa-question">{q.question}</p>
 
-          {activeId === q.id && (
+          {String(activeId) === String(q.id) && (
             <div className="qa-answer-box">
               <textarea
                 rows="3"
@@ -101,7 +102,7 @@ const InstructorQA = () => {
             </div>
           )}
 
-          {activeId !== q.id && (
+          {String(activeId) !== String(q.id) && (
             <button className="btn btn-outline" onClick={() => setActiveId(q.id)}>
               Answer
             </button>

@@ -5,7 +5,7 @@ import { api } from '../../utils/api';
 import { BookOpen, Award, TrendingUp, Clock, CheckCircle } from 'lucide-react';
 import './StudentDashboard.css';
 
-const formatQuizDate = (date) => (date ? date.replace('2024', '2026') : '');
+const formatQuizDate = (date) => date || '';
 
 const StudentDashboard = () => {
   const { user } = useAuth();
