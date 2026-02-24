@@ -1,16 +1,18 @@
-import React, { useState, useEffect } from "react";
-import { apiGetUsers } from "../../utils/api";
+import React, { useState } from "react";
+import { mockUsers } from "../../utils/mockData";
 import "./AdminUsers.css";
+
+// Build a flat list of all users with their roles
+const allUsers = [
+    ...mockUsers.students.map(u => ({ ...u, role: 'student' })),
+    ...mockUsers.instructors.map(u => ({ ...u, role: 'instructor' })),
+    ...mockUsers.admins.map(u => ({ ...u, role: 'admin' })),
+];
 
 const AdminUsers = () => {
     const [search, setSearch] = useState("");
-    const [users, setUsers] = useState([]);
 
-    useEffect(() => {
-        apiGetUsers().then(setUsers).catch(console.error);
-    }, []);
-
-    const filteredUsers = users.filter(user =>
+    const filteredUsers = allUsers.filter(user =>
         user.name.toLowerCase().includes(search.toLowerCase()) ||
         user.email.toLowerCase().includes(search.toLowerCase()) ||
         String(user.id).includes(search)
@@ -43,7 +45,7 @@ const AdminUsers = () => {
                     </div>
 
                     {filteredUsers.map((user) => (
-                        <div key={user.id} className="table-row">
+                        <div key={`${user.role}-${user.id}`} className="table-row">
                             <span>{user.id}</span>
                             <span>{user.name}</span>
                             <span>{user.email}</span>
@@ -57,6 +59,14 @@ const AdminUsers = () => {
                             </span>
                         </div>
                     ))}
+
+                    {filteredUsers.length === 0 && (
+                        <div className="table-row">
+                            <span style={{ gridColumn: '1/-1', textAlign: 'center', color: 'var(--text-muted)' }}>
+                                No users found
+                            </span>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

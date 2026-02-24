@@ -1,8 +1,8 @@
 import { useNavigate } from 'react-router-dom';
 import { Link } from 'react-router-dom';
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../../utils/AuthContext';
-import { apiGetStats, apiGetReports, apiGetUsers } from '../../utils/api';
+import { mockUsers, mockCourses, mockReports, mockSystemStats } from '../../utils/mockData';
 import {
     Users, BookOpen, TrendingUp, DollarSign,
     AlertCircle, CheckCircle, Activity, Award
@@ -13,50 +13,30 @@ import './AdminDashboard.css';
 const AdminDashboard = () => {
     const { user } = useAuth();
     const navigate = useNavigate();
-    const [stats, setStats] = useState({ totalUsers: 0, totalCourses: 0, totalEnrollments: 0, activeUsers: 0, revenue: 0, completionRate: 0 });
-    const [reports, setReports] = useState([]);
-    const [users, setUsers] = useState([]);
 
-    useEffect(() => {
-        apiGetStats().then(setStats).catch(console.error);
-        apiGetReports().then(setReports).catch(console.error);
-        apiGetUsers().then(setUsers).catch(console.error);
-    }, []);
+    // Build all users flat list
+    const allUsers = [
+        ...mockUsers.students.map(u => ({ ...u, role: 'student' })),
+        ...mockUsers.instructors.map(u => ({ ...u, role: 'instructor' })),
+        ...mockUsers.admins.map(u => ({ ...u, role: 'admin' })),
+    ];
+
+    const [reports, setReports] = useState(mockReports);
 
     const pendingReports = reports.filter(r => r.status === 'pending').length;
-    const totalUsers = users.length || stats.totalUsers;
+    const totalUsers = allUsers.length;
 
     const userBreakdown = [
-        { label: 'Students', count: users.filter(u => u.role === 'student').length, color: 'var(--primary)' },
-        { label: 'Instructors', count: users.filter(u => u.role === 'instructor').length, color: 'var(--success)' },
-        { label: 'Admins', count: users.filter(u => u.role === 'admin').length, color: 'var(--warning)' }
+        { label: 'Students', count: allUsers.filter(u => u.role === 'student').length, color: 'var(--primary)' },
+        { label: 'Instructors', count: allUsers.filter(u => u.role === 'instructor').length, color: 'var(--success)' },
+        { label: 'Admins', count: allUsers.filter(u => u.role === 'admin').length, color: 'var(--warning)' },
     ];
 
     const systemStats = [
-        {
-            icon: Users,
-            label: 'Total Users',
-            value: stats.totalUsers,
-            color: 'primary'
-        },
-        {
-            icon: BookOpen,
-            label: 'Total Courses',
-            value: stats.totalCourses,
-            color: 'success'
-        },
-        {
-            icon: TrendingUp,
-            label: 'Enrollments',
-            value: stats.totalEnrollments,
-            color: 'warning'
-        },
-        {
-            icon: DollarSign,
-            label: 'Revenue',
-            value: `$${(stats.revenue / 1000).toFixed(1)}k`,
-            color: 'accent'
-        }
+        { icon: Users, label: 'Total Users', value: totalUsers, color: 'primary' },
+        { icon: BookOpen, label: 'Total Courses', value: mockCourses.length, color: 'success' },
+        { icon: TrendingUp, label: 'Enrollments', value: mockUsers.students.reduce((acc, s) => acc + s.enrolledCourses.length, 0), color: 'warning' },
+        { icon: DollarSign, label: 'Revenue', value: `$${(mockSystemStats.revenue / 1000).toFixed(1)}k`, color: 'accent' },
     ];
 
     return (
@@ -64,13 +44,13 @@ const AdminDashboard = () => {
             <div className="container">
                 <div className="dashboard-header animate-fade-in">
                     <div>
-                        <h1>Admin Dashboard </h1>
+                        <h1>Admin Dashboard</h1>
                         <p>Monitor and manage your entire platform</p>
                     </div>
                     <div className="header-badges">
                         <div className="badge-item">
                             <Activity size={18} />
-                            <span>{stats.activeUsers} Active Users</span>
+                            <span>{mockSystemStats.activeUsers} Active Users</span>
                         </div>
                     </div>
                 </div>
@@ -92,7 +72,6 @@ const AdminDashboard = () => {
                                     <div className="stat-value">{stat.value}</div>
                                     <div className="stat-label">{stat.label}</div>
                                 </div>
-                                <div className="stat-change positive">{stat.change}</div>
                             </div>
                         );
                     })}
@@ -133,10 +112,8 @@ const AdminDashboard = () => {
                     {/* Reports & Alerts */}
                     <section className="section">
                         <div className="section-title">
-                            <h2>Reports & Complaints</h2>
-                            <Link to="/admin/reports" className="view-all">
-                                View All
-                            </Link>
+                            <h2>Reports &amp; Complaints</h2>
+                            <Link to="/admin/reports" className="view-all">View All</Link>
                         </div>
 
                         <div className="reports-list">
@@ -177,13 +154,10 @@ const AdminDashboard = () => {
                             <div className="health-card">
                                 <div className="health-header">
                                     <h3>Completion Rate</h3>
-                                    <span className="health-value">{stats.completionRate}%</span>
+                                    <span className="health-value">{mockSystemStats.completionRate}%</span>
                                 </div>
                                 <div className="health-bar">
-                                    <div
-                                        className="health-fill"
-                                        style={{ width: `${stats.completionRate}%` }}
-                                    ></div>
+                                    <div className="health-fill" style={{ width: `${mockSystemStats.completionRate}%` }}></div>
                                 </div>
                                 <p>Students completing enrolled courses</p>
                             </div>
@@ -191,13 +165,10 @@ const AdminDashboard = () => {
                             <div className="health-card">
                                 <div className="health-header">
                                     <h3>Active Users</h3>
-                                    <span className="health-value">{stats.totalUsers > 0 ? Math.round((stats.activeUsers / stats.totalUsers) * 100) : 0}%</span>
+                                    <span className="health-value">{Math.round((mockSystemStats.activeUsers / mockSystemStats.totalUsers) * 100)}%</span>
                                 </div>
                                 <div className="health-bar">
-                                    <div
-                                        className="health-fill"
-                                        style={{ width: `${stats.totalUsers > 0 ? (stats.activeUsers / stats.totalUsers) * 100 : 0}%` }}
-                                    ></div>
+                                    <div className="health-fill" style={{ width: `${(mockSystemStats.activeUsers / mockSystemStats.totalUsers) * 100}%` }}></div>
                                 </div>
                                 <p>Users active in last 30 days</p>
                             </div>

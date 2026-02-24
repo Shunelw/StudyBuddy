@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../utils/AuthContext';
-import { apiEnrollCourse } from '../../utils/api';
-import { CheckCircle, CreditCard, Lock, X, ArrowRight } from 'lucide-react';
+import { CheckCircle, Lock, X, ArrowRight } from 'lucide-react';
 import './EnrollmentModal.css';
 
 const EnrollmentModal = ({ course, onClose }) => {
@@ -28,23 +27,17 @@ const EnrollmentModal = ({ course, onClose }) => {
 
     const handlePayment = (e) => {
         e.preventDefault();
-        // Simulate payment processing
         setTimeout(() => {
             completeEnrollment();
-        }, 1000);
+        }, 500);
     };
 
-    const completeEnrollment = async () => {
-        try {
-            await apiEnrollCourse(course.id, user.id);
-            const enrolledCourses = user.enrolledCourses || [];
-            updateUser({
-                enrolledCourses: [...enrolledCourses, course.id]
-            });
-            setStep(3); // Success
-        } catch (err) {
-            alert(err.message);
+    const completeEnrollment = () => {
+        const enrolledCourses = user.enrolledCourses || [];
+        if (!enrolledCourses.includes(course.id)) {
+            updateUser({ enrolledCourses: [...enrolledCourses, course.id] });
         }
+        setStep(3); // Success
     };
 
     const handleViewCourse = () => {

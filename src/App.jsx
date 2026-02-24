@@ -153,14 +153,6 @@ function AppContent() {
           }
         />
         <Route
-          path="/instructor/*"
-          element={
-            <ProtectedRoute allowedRoles={['instructor']}>
-              <InstructorDashboard />
-            </ProtectedRoute>
-          }
-        />
-        <Route
           path="/instructor/course/:courseId"
           element={
             <ProtectedRoute allowedRoles={['instructor']}>
@@ -168,12 +160,19 @@ function AppContent() {
             </ProtectedRoute>
           }
         />
-
         <Route
           path="/instructor/qa"
           element={
             <ProtectedRoute allowedRoles={['instructor']}>
               <InstructorQA />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/instructor/*"
+          element={
+            <ProtectedRoute allowedRoles={['instructor']}>
+              <InstructorDashboard />
             </ProtectedRoute>
           }
         />

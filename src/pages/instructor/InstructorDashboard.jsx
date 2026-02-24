@@ -1,50 +1,37 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../utils/AuthContext';
-import { apiGetCourses, apiGetQuestions } from '../../utils/api';
-import { BookOpen, Users, MessageCircle, Award, Plus, TrendingUp } from 'lucide-react';
+import { mockCourses, mockQuestions, mockUsers } from '../../utils/mockData';
+import { BookOpen, Users, MessageCircle, Award, Plus } from 'lucide-react';
 import '../student/StudentDashboard.css';
 import './InstructorDashboard.css';
 
 const InstructorDashboard = () => {
     const { user } = useAuth();
-    const [instructorCourses, setInstructorCourses] = useState([]);
-    const [pendingQuestions, setPendingQuestions] = useState([]);
 
-    useEffect(() => {
-        apiGetCourses(user.id).then(setInstructorCourses).catch(console.error);
-        apiGetQuestions().then(qs => {
-            setPendingQuestions(qs.filter(q => q.status === 'pending'));
-        }).catch(console.error);
-    }, [user.id]);
+    // All courses taught by this instructor
+    const instructorCourses = mockCourses.filter(c => c.instructorId === user.id);
+
+    // All pending questions across instructor's courses
+    const myCourseIds = instructorCourses.map(c => c.id);
+    const pendingQuestions = mockQuestions.filter(
+        q => q.status === 'pending' && myCourseIds.includes(q.courseId)
+    );
+
+    // Total real students enrolled across all instructor courses
+    const totalStudents = mockUsers.students.filter(s =>
+        s.enrolledCourses.some(cid => myCourseIds.includes(cid))
+    ).length;
+
+    const avgRating = instructorCourses.length > 0
+        ? (instructorCourses.reduce((acc, c) => acc + c.rating, 0) / instructorCourses.length).toFixed(1)
+        : '0.0';
 
     const stats = [
-        {
-            icon: BookOpen,
-            label: 'My Courses',
-            value: instructorCourses.length,
-            color: 'primary'
-        },
-        {
-            icon: Users,
-            label: 'Total Students',
-            value: instructorCourses.reduce((acc, course) => acc + course.students, 0),
-            color: 'success'
-        },
-        {
-            icon: MessageCircle,
-            label: 'Pending Questions',
-            value: pendingQuestions.length,
-            color: 'warning'
-        },
-        {
-            icon: Award,
-            label: 'Avg Rating',
-            value: instructorCourses.length > 0
-                ? (instructorCourses.reduce((acc, c) => acc + c.rating, 0) / instructorCourses.length).toFixed(1)
-                : '0.0',
-            color: 'accent'
-        }
+        { icon: BookOpen, label: 'My Courses', value: instructorCourses.length, color: 'primary' },
+        { icon: Users, label: 'Total Students', value: totalStudents, color: 'success' },
+        { icon: MessageCircle, label: 'Pending Questions', value: pendingQuestions.length, color: 'warning' },
+        { icon: Award, label: 'Avg Rating', value: avgRating, color: 'accent' },
     ];
 
     return (
@@ -52,7 +39,7 @@ const InstructorDashboard = () => {
             <div className="container">
                 <div className="dashboard-header animate-fade-in">
                     <div>
-                        <h1>Welcome, {user.name} ! </h1>
+                        <h1>Welcome, {user.name}!</h1>
                         <p>Manage your courses and help your students succeed</p>
                     </div>
                     <Link to="/instructor/create-course" className="btn btn-primary">
@@ -92,40 +79,47 @@ const InstructorDashboard = () => {
 
                         {instructorCourses.length > 0 ? (
                             <div className="courses-grid-instructor">
-                                {instructorCourses.map((course, index) => (
-                                    <div
-                                        key={course.id}
-                                        className="instructor-course-card animate-fade-in"
-                                        style={{ animationDelay: `${index * 0.1}s` }}
-                                    >
-                                        <div className="course-thumbnail">
-                                            <img src={course.image} alt={course.title} />
-                                            <div className="course-overlay">
-                                                <Link to={`/instructor/course/${course.id}`} className="btn btn-outline btn-sm">
-                                                    Manage Course
-                                                </Link>
-                                            </div>
-                                        </div>
-                                        <div className="course-info">
-                                            <span className="course-category">{course.category}</span>
-                                            <h3>{course.title}</h3>
-                                            <div className="course-stats">
-                                                <div className="stat-item">
-                                                    <Users size={16} />
-                                                    <span>{course.students} students</span>
-                                                </div>
-                                                <div className="stat-item">
-                                                    <Award size={16} />
-                                                    <span>{course.rating} rating</span>
-                                                </div>
-                                                <div className="stat-item">
-                                                    <BookOpen size={16} />
-                                                    <span>{course.lessons.length} lessons</span>
+                                {instructorCourses.map((course, index) => {
+                                    // Count real enrolled students for this course
+                                    const enrolledCount = mockUsers.students.filter(s =>
+                                        s.enrolledCourses.includes(course.id)
+                                    ).length;
+
+                                    return (
+                                        <div
+                                            key={course.id}
+                                            className="instructor-course-card animate-fade-in"
+                                            style={{ animationDelay: `${index * 0.1}s` }}
+                                        >
+                                            <div className="course-thumbnail">
+                                                <img src={course.image} alt={course.title} />
+                                                <div className="course-overlay">
+                                                    <Link to={`/instructor/course/${course.id}`} className="btn btn-outline btn-sm">
+                                                        Manage Course
+                                                    </Link>
                                                 </div>
                                             </div>
+                                            <div className="course-info">
+                                                <span className="course-category">{course.category}</span>
+                                                <h3>{course.title}</h3>
+                                                <div className="course-stats">
+                                                    <div className="stat-item">
+                                                        <Users size={16} />
+                                                        <span>{enrolledCount} student{enrolledCount !== 1 ? 's' : ''} enrolled</span>
+                                                    </div>
+                                                    <div className="stat-item">
+                                                        <Award size={16} />
+                                                        <span>{course.rating} rating</span>
+                                                    </div>
+                                                    <div className="stat-item">
+                                                        <BookOpen size={16} />
+                                                        <span>{course.lessons.length} lessons</span>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             </div>
                         ) : (
                             <div className="empty-state">
@@ -140,7 +134,7 @@ const InstructorDashboard = () => {
                         )}
                     </section>
 
-                    {/* Pending Questions */}
+                    {/* Student Questions */}
                     <section className="section">
                         <div className="section-title">
                             <h2>Student Questions</h2>
@@ -148,27 +142,23 @@ const InstructorDashboard = () => {
                         </div>
 
                         <div className="questions-list">
-                            {pendingQuestions.slice(0, 5).map((question) => (
-                                <div key={question.id} className="question-item">
+                            {pendingQuestions.slice(0, 5).map((q) => (
+                                <div key={q.id} className="question-item">
                                     <div className="question-header">
                                         <div className="student-info">
-                                            <div className="student-avatar">{question.studentName.charAt(0)}</div>
+                                            <div className="student-avatar">{q.studentName.charAt(0)}</div>
                                             <div>
-                                                <h4>{question.studentName}</h4>
-                                                <p className="course-name">{question.courseName}</p>
+                                                <h4>{q.studentName}</h4>
+                                                <p className="course-name">{q.courseName}</p>
                                             </div>
                                         </div>
-                                        <span className="question-date">{question.date}</span>
+                                        <span className="question-date">{q.date}</span>
                                     </div>
-                                    <p className="question-text">{question.question}</p>
+                                    <p className="question-text">{q.question}</p>
                                     <div className="question-actions">
                                         <span className="status-badge pending">Pending</span>
-                                        {/* <button className="btn btn-outline btn-sm">
-                                            <MessageCircle size={16} />
-                                            Answer
-                                        </button> */}
                                         <Link
-                                            to={`/instructor/qa?questionId=${question.id}`}
+                                            to={`/instructor/qa?questionId=${q.id}`}
                                             className="btn btn-outline btn-sm"
                                         >
                                             <MessageCircle size={16} />
@@ -186,33 +176,6 @@ const InstructorDashboard = () => {
                             )}
                         </div>
                     </section>
-
-                    {/* Quick Stats */}
-                    <section className="section">
-                        <div className="section-title">
-                            <h2>Performance Overview</h2>
-                        </div>
-                        <div className="performance-grid">
-                            <div className="performance-card">
-                                <TrendingUp size={32} />
-                                <h3>Student Enrollment</h3>
-                                <p className="performance-value">+{Math.floor(Math.random() * 50 + 20)}%</p>
-                                <p className="performance-label">This month</p>
-                            </div>
-                            <div className="performance-card">
-                                <Award size={32} />
-                                <h3>Course Completion</h3>
-                                <p className="performance-value">{Math.floor(Math.random() * 30 + 60)}%</p>
-                                <p className="performance-label">Average rate</p>
-                            </div>
-                            <div className="performance-card">
-                                <MessageCircle size={32} />
-                                <h3>Response Rate</h3>
-                                <p className="performance-value">{Math.floor(Math.random() * 20 + 75)}%</p>
-                                <p className="performance-label">Questions answered</p>
-                            </div>
-                        </div>
-                    </section>
                 </div>
             </div>
         </div>
@@ -220,4 +183,3 @@ const InstructorDashboard = () => {
 };
 
 export default InstructorDashboard;
-

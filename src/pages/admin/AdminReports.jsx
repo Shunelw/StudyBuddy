@@ -1,27 +1,29 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { apiGetReports } from '../../utils/api';
+import { mockReports } from '../../utils/mockData';
 import { AlertCircle, CheckCircle } from 'lucide-react';
 import './AdminReports.css';
 
 const AdminReports = () => {
     const [params] = useSearchParams();
     const statusFilter = params.get('status');
-    const [allReports, setAllReports] = useState([]);
-
-    useEffect(() => {
-        apiGetReports().then(setAllReports).catch(console.error);
-    }, []);
+    const [allReports, setAllReports] = useState(mockReports);
 
     const reports = statusFilter
         ? allReports.filter(r => r.status === statusFilter)
         : allReports;
 
+    const handleResolve = (reportId) => {
+        setAllReports(prev =>
+            prev.map(r => r.id === reportId ? { ...r, status: 'resolved' } : r)
+        );
+    };
+
     return (
         <div className="dashboard-page">
             <div className="container">
                 <div className="admin-header">
-                    <h1>Reports & Complaints</h1>
+                    <h1>Reports &amp; Complaints</h1>
                 </div>
 
                 <div className="reports-list">
@@ -45,6 +47,16 @@ const AdminReports = () => {
                                     <span>{report.userName}</span>
                                     <span>{new Date(report.date).toLocaleDateString()}</span>
                                 </div>
+                                {report.status === 'pending' && (
+                                    <button
+                                        className="btn btn-primary btn-sm"
+                                        style={{ marginTop: '0.75rem' }}
+                                        onClick={() => handleResolve(report.id)}
+                                    >
+                                        <CheckCircle size={16} />
+                                        Mark as Resolved
+                                    </button>
+                                )}
                             </div>
                         </div>
                     ))}

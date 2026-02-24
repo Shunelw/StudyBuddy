@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../utils/AuthContext';
-import { apiGetCourse, apiEnrollCourse, apiCompleteLesson } from '../../utils/api';
+import { getCourseById } from '../../utils/mockData';
 import {
     BookOpen, Play, Clock, Users, Star, CheckCircle,
     Lock, Award, ArrowLeft, Download
@@ -12,20 +12,8 @@ const CourseView = () => {
     const { courseId } = useParams();
     const { user, updateUser } = useAuth();
     const navigate = useNavigate();
-    const [course, setCourse] = useState(null);
-    const [loading, setLoading] = useState(true);
+    const course = getCourseById(courseId);
     const [selectedLesson, setSelectedLesson] = useState(null);
-
-    useEffect(() => {
-        apiGetCourse(courseId).then(data => {
-            setCourse(data);
-            setLoading(false);
-        }).catch(() => setLoading(false));
-    }, [courseId]);
-
-    if (loading) {
-        return <div className="container" style={{ padding: '4rem 0', textAlign: 'center' }}><h2>Loading...</h2></div>;
-    }
 
     if (!course) {
         return (
@@ -48,16 +36,13 @@ const CourseView = () => {
         percentage: totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0
     };
 
-    const handleEnroll = async () => {
+    const handleEnroll = () => {
         if (course.price === 0 || window.confirm(`Enroll in "${course.title}" for $${course.price}?`)) {
-            try {
-                await apiEnrollCourse(course.id, user.id);
-                const enrolledCourses = user.enrolledCourses || [];
+            const enrolledCourses = user.enrolledCourses || [];
+            if (!enrolledCourses.includes(course.id)) {
                 updateUser({ enrolledCourses: [...enrolledCourses, course.id] });
-                alert('Successfully enrolled! You can now access all lessons.');
-            } catch (err) {
-                alert(err.message);
             }
+            alert('Successfully enrolled! You can now access all lessons.');
         }
     };
 
@@ -69,15 +54,9 @@ const CourseView = () => {
         setSelectedLesson(lesson);
     };
 
-    const handleCompleteLesson = async (lessonId) => {
+    const handleCompleteLesson = (lessonId) => {
         if (!completedLessonIds.includes(lessonId)) {
-            try {
-                await apiCompleteLesson(course.id, user.id, lessonId);
-                updateUser({ completedLessons: [...completedLessonIds, lessonId] });
-                alert('Lesson marked as complete!');
-            } catch (err) {
-                alert(err.message);
-            }
+            updateUser({ completedLessons: [...completedLessonIds, lessonId] });
         }
     };
 

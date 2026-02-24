@@ -110,6 +110,12 @@ export const apiCreateReport = (type, userId, subject, description) =>
         body: JSON.stringify({ type, userId, subject, description }),
     });
 
+export const apiResolveReport = (reportId) =>
+    request('/reports', {
+        method: 'PUT',
+        body: JSON.stringify({ id: reportId, status: 'resolved' }),
+    });
+
 // ── Stats ──────────────────────────────────────────────
 export const apiGetStats = () => request('/stats');
 

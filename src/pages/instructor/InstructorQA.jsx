@@ -1,19 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { apiGetQuestions, apiAnswerQuestion } from '../../utils/api';
+import { mockQuestions } from '../../utils/mockData';
 import './InstructorQA.css';
 
 const InstructorQA = () => {
-    const [questions, setQuestions] = useState([]);
+    const [questions, setQuestions] = useState(mockQuestions);
     const [activeId, setActiveId] = useState(null);
     const [answerText, setAnswerText] = useState('');
 
     const [searchParams] = useSearchParams();
     const focusedQuestionId = searchParams.get('questionId');
-
-    useEffect(() => {
-        apiGetQuestions().then(setQuestions).catch(console.error);
-    }, []);
 
     // Auto-open answer box if coming from dashboard
     useEffect(() => {
@@ -22,21 +18,16 @@ const InstructorQA = () => {
         }
     }, [focusedQuestionId]);
 
-    const submitAnswer = async (id) => {
-        try {
-            await apiAnswerQuestion(id, answerText);
-            setQuestions(prev =>
-                prev.map(q =>
-                    q.id === id
-                        ? { ...q, answer: answerText, status: 'answered' }
-                        : q
-                )
-            );
-            setActiveId(null);
-            setAnswerText('');
-        } catch (err) {
-            alert('Failed to submit answer: ' + err.message);
-        }
+    const submitAnswer = (id) => {
+        setQuestions(prev =>
+            prev.map(q =>
+                q.id === id
+                    ? { ...q, answer: answerText, status: 'answered' }
+                    : q
+            )
+        );
+        setActiveId(null);
+        setAnswerText('');
     };
 
     const pending = questions.filter(q => q.status === 'pending');

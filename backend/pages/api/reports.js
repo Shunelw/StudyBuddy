@@ -1,4 +1,4 @@
-const db = require('../../lib/db');
+import db from '../../lib/db';
 
 export default async function handler(req, res) {
     if (req.method === 'OPTIONS') {
@@ -48,6 +48,30 @@ export default async function handler(req, res) {
             return res.status(201).json(result.rows[0]);
         } catch (error) {
             console.error('Reports POST error:', error);
+            return res.status(500).json({ error: 'Internal server error' });
+        }
+    }
+
+    if (req.method === 'PUT') {
+        try {
+            const { id, status } = req.body;
+
+            if (!id || !status) {
+                return res.status(400).json({ error: 'id and status are required' });
+            }
+
+            const result = await db.query(
+                'UPDATE reports SET status = $1 WHERE id = $2 RETURNING *',
+                [status, id]
+            );
+
+            if (result.rows.length === 0) {
+                return res.status(404).json({ error: 'Report not found' });
+            }
+
+            return res.status(200).json(result.rows[0]);
+        } catch (error) {
+            console.error('Reports PUT error:', error);
             return res.status(500).json({ error: 'Internal server error' });
         }
     }

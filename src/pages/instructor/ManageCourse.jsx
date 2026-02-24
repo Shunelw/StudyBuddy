@@ -1,43 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
-import { apiGetCourse } from '../../utils/api';
+import { getCourseById } from '../../utils/mockData';
 import './ManageCourse.css';
 
 const ManageCourse = () => {
-    const [course, setCourse] = useState(null);
-    const [loading, setLoading] = useState(true);
+    const { courseId } = useParams();
+    const navigate = useNavigate();
+
+    const courseData = getCourseById(courseId);
     const [tab, setTab] = useState('overview');
-    const [lessons, setLessons] = useState([]);
-    const [quizzes, setQuizzes] = useState([]);
-
-    useEffect(() => {
-        apiGetCourse(courseId).then(data => {
-            setCourse(data);
-            setLessons(data?.lessons || []);
-            setQuizzes(data?.quizzes || []);
-            setLoading(false);
-        }).catch(() => setLoading(false));
-    }, [courseId]);
-
-    const [lessonForm, setLessonForm] = useState({
-        title: '',
-        description: '',
-        duration: '',
-        videoUrl: ''
-    });
-
-    const [quizForm, setQuizForm] = useState({
-        title: ''
-    });
-
-    if (loading) {
-        return <p>Loading...</p>;
-    }
-
-    if (!course) {
-        return <p>Course not found</p>;
-    }
+    const [lessons, setLessons] = useState(courseData?.lessons || []);
+    const [quizzes, setQuizzes] = useState(courseData?.quizzes || []);
+    const course = courseData;
 
     /* ---------------- LESSONS ---------------- */
 
