@@ -1,7 +1,7 @@
 /**
  * StudyBuddy API client — all requests go to studybuddy-api backend.
  */
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const API_BASE = import.meta.env.VITE_API_URL || '';
 
 async function request(path, options = {}) {
   const url = `${API_BASE}${path}`;
@@ -50,6 +50,15 @@ export const api = {
         method: 'POST',
         body: JSON.stringify(body),
       }),
+    delete: (id) =>
+      request(`/api/courses/${id}`, { method: 'DELETE' }),
+  },
+
+  instructor: {
+    stats: (instructorId) =>
+      request(`/api/instructor/stats?instructorId=${encodeURIComponent(instructorId)}`),
+    students: (instructorId) =>
+      request(`/api/instructor/students?instructorId=${encodeURIComponent(instructorId)}`),
   },
 
   categories: {
@@ -84,8 +93,10 @@ export const api = {
   },
 
   qa: {
-    list: (courseId) =>
-      request(courseId ? `/api/qa?courseId=${courseId}` : '/api/qa'),
+    list: (params = {}) => {
+      const sp = new URLSearchParams(params);
+      return request(`/api/qa${sp.toString() ? `?${sp}` : ''}`);
+    },
     ask: (body) =>
       request('/api/qa', {
         method: 'POST',

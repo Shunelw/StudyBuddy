@@ -10,6 +10,7 @@ const InstructorDashboard = () => {
   const { user } = useAuth();
   const [instructorCourses, setInstructorCourses] = useState([]);
   const [questions, setQuestions] = useState([]);
+  const [perfStats, setPerfStats] = useState({ totalStudents: 0, completionRate: 0, responseRate: 0 });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -20,13 +21,15 @@ const InstructorDashboard = () => {
     let cancelled = false;
     (async () => {
       try {
-        const [coursesRes, qaRes] = await Promise.all([
+        const [coursesRes, qaRes, statsRes] = await Promise.all([
           api.courses.list({ instructorId: user.id }),
-          api.qa.list(),
+          api.qa.list({ instructorId: user.id }),
+          api.instructor.stats(user.id),
         ]);
         if (!cancelled) {
           setInstructorCourses(Array.isArray(coursesRes) ? coursesRes : []);
           setQuestions(Array.isArray(qaRes) ? qaRes : []);
+          setPerfStats(statsRes || { totalStudents: 0, completionRate: 0, responseRate: 0 });
         }
       } catch (_) {
         if (!cancelled) setInstructorCourses([]);
@@ -45,7 +48,7 @@ const InstructorDashboard = () => {
     {
       icon: Users,
       label: 'Total Students',
-      value: instructorCourses.reduce((acc, c) => acc + (c.students || 0), 0),
+      value: perfStats.totalStudents,
       color: 'success',
     },
     { icon: MessageCircle, label: 'Pending Questions', value: pendingQuestions.length, color: 'warning' },
@@ -190,20 +193,20 @@ const InstructorDashboard = () => {
             <div className="performance-grid">
               <div className="performance-card">
                 <TrendingUp size={32} />
-                <h3>Student Enrollment</h3>
-                <p className="performance-value">+{Math.floor(Math.random() * 50 + 20)}%</p>
-                <p className="performance-label">This month</p>
+                <h3>Total Students</h3>
+                <p className="performance-value">{perfStats.totalStudents}</p>
+                <p className="performance-label">Enrolled across all courses</p>
               </div>
               <div className="performance-card">
                 <Award size={32} />
                 <h3>Course Completion</h3>
-                <p className="performance-value">{Math.floor(Math.random() * 30 + 60)}%</p>
-                <p className="performance-label">Average rate</p>
+                <p className="performance-value">{perfStats.completionRate}%</p>
+                <p className="performance-label">Average lesson completion</p>
               </div>
               <div className="performance-card">
                 <MessageCircle size={32} />
                 <h3>Response Rate</h3>
-                <p className="performance-value">{Math.floor(Math.random() * 20 + 75)}%</p>
+                <p className="performance-value">{perfStats.responseRate}%</p>
                 <p className="performance-label">Questions answered</p>
               </div>
             </div>

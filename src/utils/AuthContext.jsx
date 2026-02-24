@@ -44,8 +44,8 @@ export const AuthProvider = ({ children }) => {
       setIsAuthenticated(true);
       localStorage.setItem('studybuddy_user', JSON.stringify(userData));
       return true;
-    } catch (_) {
-      return false;
+    } catch (err) {
+      throw new Error(err.message || 'Login failed');
     }
   };
 
@@ -58,8 +58,8 @@ export const AuthProvider = ({ children }) => {
       setIsAuthenticated(true);
       localStorage.setItem('studybuddy_user', JSON.stringify(newUser));
       return true;
-    } catch (_) {
-      return false;
+    } catch (err) {
+      throw new Error(err.message || 'Registration failed');
     }
   };
 
@@ -70,6 +70,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const updateUser = (updatedData) => {
+    if (!user) return;
     const updatedUser = { ...user, ...updatedData };
     setUser(updatedUser);
     localStorage.setItem('studybuddy_user', JSON.stringify(updatedUser));

@@ -88,7 +88,7 @@ const Quiz = () => {
             }
         });
 
-        const score = Math.round((correct / quiz.questions.length) * 100);
+        const score = quiz.questions.length > 0 ? Math.round((correct / quiz.questions.length) * 100) : 0;
         const newScore = {
             quizId: quiz.id,
             courseId: course.id,
@@ -118,10 +118,11 @@ const Quiz = () => {
                 correct++;
             }
         });
+        const total = quiz.questions.length;
         return {
             correct,
-            total: quiz.questions.length,
-            score: Math.round((correct / quiz.questions.length) * 100)
+            total,
+            score: total > 0 ? Math.round((correct / total) * 100) : 0,
         };
     };
 

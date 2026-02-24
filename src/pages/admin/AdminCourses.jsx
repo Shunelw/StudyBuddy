@@ -5,6 +5,7 @@ import './AdminCourses.css';
 const AdminCourses = () => {
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [deletingId, setDeletingId] = useState(null);
 
   useEffect(() => {
     api.courses
@@ -15,11 +16,20 @@ const AdminCourses = () => {
   }, []);
 
   const handleEdit = (course) => {
-    console.log('Edit course:', course);
+    alert(`Edit functionality for "${course.title}" is managed by the course instructor.`);
   };
 
-  const handleDelete = (course) => {
-    console.log('Delete course:', course);
+  const handleDelete = async (course) => {
+    if (!window.confirm(`Delete "${course.title}"? This cannot be undone.`)) return;
+    setDeletingId(course.id);
+    try {
+      await api.courses.delete(course.id);
+      setCourses((prev) => prev.filter((c) => c.id !== course.id));
+    } catch (e) {
+      alert(e.message || 'Failed to delete course');
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   return (
@@ -39,7 +49,13 @@ const AdminCourses = () => {
                 <p>{course.students ?? 0} students</p>
                 <div className="admin-actions">
                   <button onClick={() => handleEdit(course)}>Edit</button>
-                  <button onClick={() => handleDelete(course)} className="delete-btn">Delete</button>
+                  <button
+                    onClick={() => handleDelete(course)}
+                    className="delete-btn"
+                    disabled={deletingId === course.id}
+                  >
+                    {deletingId === course.id ? 'Deleting...' : 'Delete'}
+                  </button>
                 </div>
               </div>
             ))}

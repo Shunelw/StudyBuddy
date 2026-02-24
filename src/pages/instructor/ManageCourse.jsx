@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { api } from '../../utils/api';
+import { useAuth } from '../../utils/AuthContext';
 import './ManageCourse.css';
 
 const ManageCourse = () => {
   const { courseId } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [course, setCourse] = useState(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState('overview');
@@ -93,6 +95,19 @@ const ManageCourse = () => {
 
   if (loading) return <p>Loading course...</p>;
   if (!course) return <p>Course not found</p>;
+  if (course.instructorId !== user?.id) {
+    return (
+      <div className="manage-course-page">
+        <button onClick={() => navigate('/instructor/dashboard')} className="back-btn">
+          <ArrowLeft size={20} />
+          Back to Dashboard
+        </button>
+        <p style={{ color: 'red', marginTop: '2rem' }}>
+          Access denied. You can only manage your own courses.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="manage-course-page">

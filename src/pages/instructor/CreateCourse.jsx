@@ -25,7 +25,7 @@ const CreateCourse = () => {
         title: '',
         description: '',
         duration: '',
-        content: ''
+        videoUrl: '',
     });
 
     const handleInputChange = (e) => {
@@ -41,7 +41,7 @@ const CreateCourse = () => {
     const addLesson = () => {
         if (currentLesson.title && currentLesson.description) {
             setLessons([...lessons, { ...currentLesson, id: Date.now() }]);
-            setCurrentLesson({ title: '', description: '', duration: '', content: '' });
+            setCurrentLesson({ title: '', description: '', duration: '', videoUrl: '' });
         }
     };
 
@@ -269,8 +269,8 @@ const CreateCourse = () => {
                                         <label>Video URL (optional)</label>
                                         <input
                                             type="url"
-                                            name="content"
-                                            value={currentLesson.content}
+                                            name="videoUrl"
+                                            value={currentLesson.videoUrl}
                                             onChange={handleLessonChange}
                                             placeholder="https://..."
                                         />
