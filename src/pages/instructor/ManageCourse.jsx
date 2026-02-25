@@ -1,56 +1,104 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
-import { getCourseById } from '../../utils/mockData';
+import { apiGetCourse, apiAddLesson, apiDeleteLesson, apiAddQuiz, apiDeleteQuiz } from '../../utils/api';
 import './ManageCourse.css';
 
 const ManageCourse = () => {
     const { courseId } = useParams();
     const navigate = useNavigate();
 
-    const courseData = getCourseById(courseId);
+    const [course, setCourse] = useState(null);
+    const [lessons, setLessons] = useState([]);
+    const [quizzes, setQuizzes] = useState([]);
     const [tab, setTab] = useState('overview');
-    const [lessons, setLessons] = useState(courseData?.lessons || []);
-    const [quizzes, setQuizzes] = useState(courseData?.quizzes || []);
-    const course = courseData;
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+
+    const [lessonForm, setLessonForm] = useState({
+        title: '',
+        description: '',
+        duration: '',
+        videoUrl: ''
+    });
+
+    const [quizForm, setQuizForm] = useState({ title: '' });
+
+    // Fetch course data from API
+    const fetchCourse = async () => {
+        try {
+            const data = await apiGetCourse(courseId);
+            setCourse(data);
+            setLessons(data.lessons || []);
+            setQuizzes(data.quizzes || []);
+        } catch (err) {
+            console.error('Failed to load course:', err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchCourse();
+    }, [courseId]);
+
+    if (loading) return <div className="manage-course-page"><p>Loading...</p></div>;
+    if (!course) return <div className="manage-course-page"><p>Course not found</p></div>;
 
     /* ---------------- LESSONS ---------------- */
 
-    const addLesson = () => {
+    const addLesson = async () => {
         if (!lessonForm.title) return;
-
-        setLessons([
-            ...lessons,
-            { id: Date.now(), ...lessonForm }
-        ]);
-
-        setLessonForm({
-            title: '',
-            description: '',
-            duration: '',
-            videoUrl: ''
-        });
+        setSaving(true);
+        try {
+            const newLesson = await apiAddLesson(courseId, lessonForm);
+            setLessons([...lessons, newLesson]);
+            setLessonForm({ title: '', description: '', duration: '', videoUrl: '' });
+        } catch (err) {
+            console.error('Failed to add lesson:', err);
+        } finally {
+            setSaving(false);
+        }
     };
 
-    const deleteLesson = (id) => {
-        setLessons(lessons.filter(l => l.id !== id));
+    const deleteLesson = async (id) => {
+        setSaving(true);
+        try {
+            await apiDeleteLesson(courseId, id);
+            setLessons(lessons.filter(l => l.id !== id));
+        } catch (err) {
+            console.error('Failed to delete lesson:', err);
+        } finally {
+            setSaving(false);
+        }
     };
 
     /* ---------------- QUIZZES ---------------- */
 
-    const addQuiz = () => {
+    const addQuiz = async () => {
         if (!quizForm.title) return;
-
-        setQuizzes([
-            ...quizzes,
-            { id: Date.now(), title: quizForm.title, questions: [] }
-        ]);
-
-        setQuizForm({ title: '' });
+        setSaving(true);
+        try {
+            const newQuiz = await apiAddQuiz(courseId, { title: quizForm.title });
+            setQuizzes([...quizzes, newQuiz]);
+            setQuizForm({ title: '' });
+        } catch (err) {
+            console.error('Failed to add quiz:', err);
+        } finally {
+            setSaving(false);
+        }
     };
 
-    const deleteQuiz = (id) => {
-        setQuizzes(quizzes.filter(q => q.id !== id));
+    const deleteQuiz = async (id) => {
+        setSaving(true);
+        try {
+            await apiDeleteQuiz(courseId, id);
+            setQuizzes(quizzes.filter(q => q.id !== id));
+        } catch (err) {
+            console.error('Failed to delete quiz:', err);
+        } finally {
+            setSaving(false);
+        }
     };
 
     return (
@@ -138,8 +186,8 @@ const ManageCourse = () => {
                             />
                         </div>
 
-                        <button className="primary-btn" onClick={addLesson}>
-                            + Add Lesson
+                        <button className="primary-btn" onClick={addLesson} disabled={saving}>
+                            {saving ? 'Adding...' : '+ Add Lesson'}
                         </button>
                     </div>
 
@@ -158,6 +206,7 @@ const ManageCourse = () => {
                                 <button
                                     className="danger-btn"
                                     onClick={() => deleteLesson(l.id)}
+                                    disabled={saving}
                                 >
                                     Delete
                                 </button>
@@ -181,8 +230,8 @@ const ManageCourse = () => {
                             }
                         />
 
-                        <button className="primary-btn" onClick={addQuiz}>
-                            + Add Quiz
+                        <button className="primary-btn" onClick={addQuiz} disabled={saving}>
+                            {saving ? 'Adding...' : '+ Add Quiz'}
                         </button>
                     </div>
 
@@ -195,11 +244,12 @@ const ManageCourse = () => {
                             <div key={q.id} className="list-item">
                                 <div>
                                     <h4>{q.title}</h4>
-                                    <span>{q.questions.length} questions</span>
+                                    <span>{q.questions?.length || 0} questions</span>
                                 </div>
                                 <button
                                     className="danger-btn"
                                     onClick={() => deleteQuiz(q.id)}
+                                    disabled={saving}
                                 >
                                     Delete
                                 </button>

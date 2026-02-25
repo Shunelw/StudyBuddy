@@ -151,3 +151,74 @@
 .delete-btn:hover {
     background-color: #dc2626;
 }
+
+/* ===== Edit Form ===== */
+
+.edit-form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.edit-form .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.edit-form label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #374151;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.edit-form input,
+.edit-form textarea,
+.edit-form select {
+    padding: 8px 10px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: inherit;
+}
+
+.edit-form .form-row-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.save-btn {
+    background-color: #10b981 !important;
+    color: white !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+}
+
+.save-btn:hover {
+    background-color: #059669 !important;
+}
+
+.cancel-btn {
+    background-color: #6b7280 !important;
+    color: white !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+}
+
+.cancel-btn:hover {
+    background-color: #4b5563 !important;
+}
+
+.admin-actions button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+}

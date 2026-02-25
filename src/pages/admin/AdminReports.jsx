@@ -1,23 +1,51 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { mockReports } from '../../utils/mockData';
+import { apiGetReports, apiResolveReport } from '../../utils/api';
 import { AlertCircle, CheckCircle } from 'lucide-react';
 import './AdminReports.css';
 
 const AdminReports = () => {
     const [params] = useSearchParams();
     const statusFilter = params.get('status');
-    const [allReports, setAllReports] = useState(mockReports);
+    const [allReports, setAllReports] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchReports = async () => {
+            try {
+                const data = await apiGetReports();
+                setAllReports(data);
+            } catch (err) {
+                console.error('Failed to load reports:', err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchReports();
+    }, []);
 
     const reports = statusFilter
         ? allReports.filter(r => r.status === statusFilter)
         : allReports;
 
-    const handleResolve = (reportId) => {
-        setAllReports(prev =>
-            prev.map(r => r.id === reportId ? { ...r, status: 'resolved' } : r)
-        );
+    const handleResolve = async (reportId) => {
+        try {
+            await apiResolveReport(reportId);
+            setAllReports(prev =>
+                prev.map(r => r.id === reportId ? { ...r, status: 'resolved' } : r)
+            );
+        } catch (err) {
+            console.error('Failed to resolve report:', err);
+        }
     };
+
+    if (loading) {
+        return (
+            <div className="dashboard-page">
+                <div className="container"><p>Loading...</p></div>
+            </div>
+        );
+    }
 
     return (
         <div className="dashboard-page">

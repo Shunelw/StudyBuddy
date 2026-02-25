@@ -23,15 +23,15 @@ const InstructorDashboard = () => {
         s.enrolledCourses.some(cid => myCourseIds.includes(cid))
     ).length;
 
-    const avgRating = instructorCourses.length > 0
-        ? (instructorCourses.reduce((acc, c) => acc + c.rating, 0) / instructorCourses.length).toFixed(1)
-        : '0.0';
+    // const avgRating = instructorCourses.length > 0
+    //     ? (instructorCourses.reduce((acc, c) => acc + c.rating, 0) / instructorCourses.length).toFixed(1)
+    //     : '0.0';
 
     const stats = [
         { icon: BookOpen, label: 'My Courses', value: instructorCourses.length, color: 'primary' },
         { icon: Users, label: 'Total Students', value: totalStudents, color: 'success' },
         { icon: MessageCircle, label: 'Pending Questions', value: pendingQuestions.length, color: 'warning' },
-        { icon: Award, label: 'Avg Rating', value: avgRating, color: 'accent' },
+        // { icon: Award, label: 'Avg Rating', value: avgRating, color: 'accent' },
     ];
 
     return (
@@ -107,10 +107,10 @@ const InstructorDashboard = () => {
                                                         <Users size={16} />
                                                         <span>{enrolledCount} student{enrolledCount !== 1 ? 's' : ''} enrolled</span>
                                                     </div>
-                                                    <div className="stat-item">
+                                                    {/* <div className="stat-item">
                                                         <Award size={16} />
                                                         <span>{course.rating} rating</span>
-                                                    </div>
+                                                    </div> */}
                                                     <div className="stat-item">
                                                         <BookOpen size={16} />
                                                         <span>{course.lessons.length} lessons</span>

@@ -41,7 +41,7 @@ const AdminUsers = () => {
                         <span>NAME</span>
                         <span>EMAIL</span>
                         <span>ROLE</span>
-                        <span>ACTIONS</span>
+                        {/* <span>ACTIONS</span> */}
                     </div>
 
                     {filteredUsers.map((user) => (
@@ -54,9 +54,9 @@ const AdminUsers = () => {
                                     {user.role}
                                 </span>
                             </span>
-                            <span className="actions">
+                            {/* <span className="actions">
                                 <button className="view-btn">View Profile</button>
-                            </span>
+                            </span> */}
                         </div>
                     ))}
 

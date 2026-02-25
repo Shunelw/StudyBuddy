@@ -11,15 +11,17 @@ import StudentDashboard from './pages/student/StudentDashboard';
 import Courses from './pages/student/Courses';
 import CourseView from './pages/student/CourseView';
 import Quiz from './pages/student/Quiz';
-import InstructorDashboard from './pages/instructor/InstructorDashboard';
-import CreateCourse from './pages/instructor/CreateCourse';
-import AdminDashboard from './pages/admin/AdminDashboard';
 import StudentQA from './pages/student/StudentQA';
+import StudentReport from './pages/student/StudentReport';
+import InstructorDashboard from './pages/instructor/InstructorDashboard';
+import InstructorStudents from './pages/instructor/InstructorStudents';
+import CreateCourse from './pages/instructor/CreateCourse';
 import ManageCourse from './pages/instructor/ManageCourse';
 import InstructorQA from './pages/instructor/InstructorQA';
+import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminCourses from './pages/admin/AdminCourses';
 import AdminReports from './pages/admin/AdminReports';
-import AdminUsers from "./pages/admin/AdminUsers";
+import AdminUsers from './pages/admin/AdminUsers';
 
 
 
@@ -124,6 +126,14 @@ function AppContent() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/student/report"
+          element={
+            <ProtectedRoute allowedRoles={['student']}>
+              <StudentReport />
+            </ProtectedRoute>
+          }
+        />
 
         {/* For demo purposes, redirect other student routes to dashboard */}
         <Route
@@ -157,6 +167,14 @@ function AppContent() {
           element={
             <ProtectedRoute allowedRoles={['instructor']}>
               <ManageCourse />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/instructor/students"
+          element={
+            <ProtectedRoute allowedRoles={['instructor']}>
+              <InstructorStudents />
             </ProtectedRoute>
           }
         />
@@ -214,23 +232,8 @@ function AppContent() {
           }
         />
 
-        {/* <Route
-          path="/admin/users"
-          element={
-            <ProtectedRoute allowedRoles={['admin']}>
-              <AdminUsers />
-            </ProtectedRoute>
-          }
-        /> */}
-
-        {/* Optional: redirect /admin → dashboard */}
-        {/* <Route
-          path="/admin"
-          element={<Navigate to="/admin/dashboard" replace />}
-        /> */}
-
         {/* Catch all - redirect to home */}
-        {/* <Route path="*" element={<Navigate to="/" replace />} /> */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </>
   );

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../utils/AuthContext';
-import { BookOpen, User, LogOut, Menu, X, Home, BookMarked, Award, MessageCircle } from 'lucide-react';
+import { BookOpen, User, LogOut, Menu, X, Home, BookMarked, Award, MessageCircle, FileText } from 'lucide-react';
 import './Navigation.css';
 
 const Navigation = () => {
@@ -38,7 +38,8 @@ const Navigation = () => {
                     { to: '/student/dashboard', label: 'Dashboard', icon: Home },
                     { to: '/student/courses', label: 'Browse Courses', icon: BookMarked },
                     { to: '/student/progress', label: 'My Progress', icon: Award },
-                    { to: '/student/qa', label: 'Q&A', icon: MessageCircle }
+                    { to: '/student/qa', label: 'Q&A', icon: MessageCircle },
+                    { to: '/student/report', label: 'Report', icon: FileText }
                 ];
             case 'instructor':
                 return [

@@ -1,11 +1,11 @@
 import { useNavigate } from 'react-router-dom';
 import { Link } from 'react-router-dom';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../utils/AuthContext';
-import { mockUsers, mockCourses, mockReports, mockSystemStats } from '../../utils/mockData';
+import { apiGetStats, apiGetReports } from '../../utils/api';
 import {
     Users, BookOpen, TrendingUp, DollarSign,
-    AlertCircle, CheckCircle, Activity, Award
+    AlertCircle, CheckCircle, Activity
 } from 'lucide-react';
 import '../student/StudentDashboard.css';
 import './AdminDashboard.css';
@@ -14,29 +14,43 @@ const AdminDashboard = () => {
     const { user } = useAuth();
     const navigate = useNavigate();
 
-    // Build all users flat list
-    const allUsers = [
-        ...mockUsers.students.map(u => ({ ...u, role: 'student' })),
-        ...mockUsers.instructors.map(u => ({ ...u, role: 'instructor' })),
-        ...mockUsers.admins.map(u => ({ ...u, role: 'admin' })),
-    ];
+    const [stats, setStats] = useState(null);
+    const [reports, setReports] = useState([]);
+    const [loading, setLoading] = useState(true);
 
-    const [reports, setReports] = useState(mockReports);
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const [statsData, reportsData] = await Promise.all([
+                    apiGetStats(),
+                    apiGetReports(),
+                ]);
+                setStats(statsData);
+                setReports(reportsData);
+            } catch (err) {
+                console.error('Failed to load dashboard data:', err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchData();
+    }, []);
+
+    if (loading || !stats) {
+        return (
+            <div className="dashboard-page">
+                <div className="container"><p>Loading...</p></div>
+            </div>
+        );
+    }
 
     const pendingReports = reports.filter(r => r.status === 'pending').length;
-    const totalUsers = allUsers.length;
-
-    const userBreakdown = [
-        { label: 'Students', count: allUsers.filter(u => u.role === 'student').length, color: 'var(--primary)' },
-        { label: 'Instructors', count: allUsers.filter(u => u.role === 'instructor').length, color: 'var(--success)' },
-        { label: 'Admins', count: allUsers.filter(u => u.role === 'admin').length, color: 'var(--warning)' },
-    ];
 
     const systemStats = [
-        { icon: Users, label: 'Total Users', value: totalUsers, color: 'primary' },
-        { icon: BookOpen, label: 'Total Courses', value: mockCourses.length, color: 'success' },
-        { icon: TrendingUp, label: 'Enrollments', value: mockUsers.students.reduce((acc, s) => acc + s.enrolledCourses.length, 0), color: 'warning' },
-        { icon: DollarSign, label: 'Revenue', value: `$${(mockSystemStats.revenue / 1000).toFixed(1)}k`, color: 'accent' },
+        { icon: Users, label: 'Total Users', value: stats.totalUsers, color: 'primary' },
+        { icon: BookOpen, label: 'Total Courses', value: stats.totalCourses, color: 'success' },
+        { icon: TrendingUp, label: 'Enrollments', value: stats.totalEnrollments, color: 'warning' },
+        { icon: DollarSign, label: 'Revenue', value: stats.revenue > 0 ? `$${stats.revenue.toLocaleString()}` : '$0', color: 'accent' },
     ];
 
     return (
@@ -50,7 +64,7 @@ const AdminDashboard = () => {
                     <div className="header-badges">
                         <div className="badge-item">
                             <Activity size={18} />
-                            <span>{mockSystemStats.activeUsers} Active Users</span>
+                            <span>{stats.activeUsers} Active Users</span>
                         </div>
                     </div>
                 </div>
@@ -78,37 +92,6 @@ const AdminDashboard = () => {
                 </div>
 
                 <div className="admin-content">
-                    {/* User Management Overview */}
-                    <section className="section">
-                        <div className="section-title">
-                            <h2>User Management</h2>
-                            <a href="/admin/users" className="view-all">Manage Users</a>
-                        </div>
-
-                        <div className="user-breakdown">
-                            {userBreakdown.map((item, index) => (
-                                <div key={index} className="breakdown-card">
-                                    <div className="breakdown-header">
-                                        <h3>{item.label}</h3>
-                                        <span className="breakdown-count">{item.count}</span>
-                                    </div>
-                                    <div className="breakdown-bar">
-                                        <div
-                                            className="breakdown-fill"
-                                            style={{
-                                                width: `${totalUsers > 0 ? (item.count / totalUsers) * 100 : 0}%`,
-                                                background: item.color
-                                            }}
-                                        ></div>
-                                    </div>
-                                    <p className="breakdown-percentage">
-                                        {totalUsers > 0 ? Math.round((item.count / totalUsers) * 100) : 0}% of total users
-                                    </p>
-                                </div>
-                            ))}
-                        </div>
-                    </section>
-
                     {/* Reports & Alerts */}
                     <section className="section">
                         <div className="section-title">
@@ -141,6 +124,7 @@ const AdminDashboard = () => {
                                     </div>
                                 </div>
                             ))}
+                            {reports.length === 0 && <p>No reports yet</p>}
                         </div>
                     </section>
 
@@ -154,10 +138,10 @@ const AdminDashboard = () => {
                             <div className="health-card">
                                 <div className="health-header">
                                     <h3>Completion Rate</h3>
-                                    <span className="health-value">{mockSystemStats.completionRate}%</span>
+                                    <span className="health-value">{stats.completionRate}%</span>
                                 </div>
                                 <div className="health-bar">
-                                    <div className="health-fill" style={{ width: `${mockSystemStats.completionRate}%` }}></div>
+                                    <div className="health-fill" style={{ width: `${stats.completionRate}%` }}></div>
                                 </div>
                                 <p>Students completing enrolled courses</p>
                             </div>
@@ -165,12 +149,12 @@ const AdminDashboard = () => {
                             <div className="health-card">
                                 <div className="health-header">
                                     <h3>Active Users</h3>
-                                    <span className="health-value">{Math.round((mockSystemStats.activeUsers / mockSystemStats.totalUsers) * 100)}%</span>
+                                    <span className="health-value">{stats.activeUsers} / {stats.totalUsers}</span>
                                 </div>
                                 <div className="health-bar">
-                                    <div className="health-fill" style={{ width: `${(mockSystemStats.activeUsers / mockSystemStats.totalUsers) * 100}%` }}></div>
+                                    <div className="health-fill" style={{ width: `${stats.totalUsers > 0 ? Math.round((stats.activeUsers / stats.totalUsers) * 100) : 0}%` }}></div>
                                 </div>
-                                <p>Users active in last 30 days</p>
+                                <p>Students &amp; instructors on the platform</p>
                             </div>
 
                             <div className="health-card">

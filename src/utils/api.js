@@ -119,5 +119,34 @@ export const apiResolveReport = (reportId) =>
 // ── Stats ──────────────────────────────────────────────
 export const apiGetStats = () => request('/stats');
 
+// ── Course Management (Lessons / Quizzes) ──────────────
+export const apiDeleteCourse = (id) =>
+    request(`/courses/${id}`, { method: 'DELETE' });
+
+export const apiAddLesson = (courseId, lesson) =>
+    request(`/courses/${courseId}/lessons`, {
+        method: 'POST',
+        body: JSON.stringify(lesson),
+    });
+
+export const apiDeleteLesson = (courseId, lessonId) =>
+    request(`/courses/${courseId}/lessons?lessonId=${lessonId}`, {
+        method: 'DELETE',
+    });
+
+export const apiAddQuiz = (courseId, quiz) =>
+    request(`/courses/${courseId}/quizzes`, {
+        method: 'POST',
+        body: JSON.stringify(quiz),
+    });
+
+export const apiDeleteQuiz = (courseId, quizId) =>
+    request(`/courses/${courseId}/quizzes?quizId=${quizId}`, {
+        method: 'DELETE',
+    });
+
+export const apiGetCourseStudents = (courseId) =>
+    request(`/courses/${courseId}/students`);
+
 // ── Categories ─────────────────────────────────────────
 export const apiGetCategories = () => request('/categories');
