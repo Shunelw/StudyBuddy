@@ -43,15 +43,15 @@ const Register = () => {
             password: formData.password
         };
 
-        const success = await register(userData, formData.role);
+        const createdUser = await register(userData, formData.role);
 
-        if (success) {
+        if (createdUser) {
             const dashboardRoutes = {
                 student: '/student/dashboard',
                 instructor: '/instructor/dashboard',
                 admin: '/admin/dashboard'
             };
-            navigate(dashboardRoutes[formData.role]);
+            navigate(dashboardRoutes[createdUser.role] || '/');
         } else {
             setError(authError || 'Registration failed. Email may already be in use.');
         }

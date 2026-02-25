@@ -25,15 +25,15 @@ const Login = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        const success = await login(formData.email, formData.password, formData.role);
+        const loggedInUser = await login(formData.email, formData.password, formData.role);
 
-        if (success) {
+        if (loggedInUser) {
             const dashboardRoutes = {
                 student: '/student/dashboard',
                 instructor: '/instructor/dashboard',
                 admin: '/admin/dashboard'
             };
-            navigate(dashboardRoutes[formData.role]);
+            navigate(dashboardRoutes[loggedInUser.role] || '/');
         } else {
             setError(authError || 'Invalid credentials. Please try again.');
         }

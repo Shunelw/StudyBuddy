@@ -39,12 +39,13 @@ export const AuthProvider = ({ children }) => {
     const login = async (email, password, role) => {
         try {
             setAuthError('');
-            const userData = await apiLogin(email, password, role);
+            const normalizedEmail = typeof email === 'string' ? email.trim().toLowerCase() : '';
+            const userData = await apiLogin(normalizedEmail, password, role);
 
             setUser(userData);
             setIsAuthenticated(true);
             localStorage.setItem('studybuddy_user', JSON.stringify(userData));
-            return true;
+            return userData;
         } catch (error) {
             console.error('Login failed:', error.message);
             if (error.message === 'Failed to fetch') {
@@ -52,23 +53,25 @@ export const AuthProvider = ({ children }) => {
             } else {
                 setAuthError(error.message);
             }
-            return false;
+            return null;
         }
     };
 
     const register = async (userData, role) => {
         try {
             setAuthError('');
+            const normalizedName = typeof userData.name === 'string' ? userData.name.trim() : '';
+            const normalizedEmail = typeof userData.email === 'string' ? userData.email.trim().toLowerCase() : '';
             const createdUser = await apiRegister(
-                userData.name,
-                userData.email,
+                normalizedName,
+                normalizedEmail,
                 userData.password,
                 role
             );
             setUser(createdUser);
             setIsAuthenticated(true);
             localStorage.setItem('studybuddy_user', JSON.stringify(createdUser));
-            return true;
+            return createdUser;
         } catch (error) {
             console.error('Registration failed:', error.message);
             if (error.message === 'Failed to fetch') {
@@ -76,7 +79,7 @@ export const AuthProvider = ({ children }) => {
             } else {
                 setAuthError(error.message);
             }
-            return false;
+            return null;
         }
     };
 

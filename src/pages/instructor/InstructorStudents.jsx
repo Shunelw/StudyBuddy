@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../utils/AuthContext';
 import { apiGetCourses, apiGetCourseStudents } from '../../utils/api';
-import { Users, BookOpen, Award } from 'lucide-react';
+import { Users, BookOpen } from 'lucide-react';
 import './InstructorStudents.css';
 
 const InstructorStudents = () => {
@@ -80,7 +80,7 @@ const InstructorStudents = () => {
                                     <div className="student-avatar-large">
                                         {student.name.charAt(0).toUpperCase()}
                                     </div>
-                                    <div className="student-info">
+                                    <div className="student-card-info">
                                         <h3>{student.name}</h3>
                                         <p className="student-email">{student.email}</p>
 
