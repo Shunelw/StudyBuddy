@@ -11,14 +11,16 @@ export default async function handler(req, res) {
     }
 
     const { name, email, password, role } = req.body;
+    const normalizedName = typeof name === 'string' ? name.trim() : '';
+    const normalizedEmail = typeof email === 'string' ? email.trim().toLowerCase() : '';
 
-    if (!name || !email || !password || !role) {
+    if (!normalizedName || !normalizedEmail || !password || !role) {
         return res.status(400).json({ error: 'Name, email, password, and role are required' });
     }
 
     try {
         // Check if email already exists
-        const existing = await db.query('SELECT id FROM users WHERE email = $1', [email]);
+        const existing = await db.query('SELECT id FROM users WHERE LOWER(email) = LOWER($1)', [normalizedEmail]);
         if (existing.rows.length > 0) {
             return res.status(409).json({ error: 'Email already registered' });
         }
@@ -27,7 +29,7 @@ export default async function handler(req, res) {
 
         const result = await db.query(
             'INSERT INTO users (name, email, password_hash, role) VALUES ($1, $2, $3, $4) RETURNING id, name, email, role',
-            [name, email, passwordHash, role]
+            [normalizedName, normalizedEmail, passwordHash, role]
         );
 
         const user = result.rows[0];

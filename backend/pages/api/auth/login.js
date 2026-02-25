@@ -11,15 +11,16 @@ export default async function handler(req, res) {
     }
 
     const { email, password, role } = req.body;
+    const normalizedEmail = typeof email === 'string' ? email.trim().toLowerCase() : '';
 
-    if (!email || !password || !role) {
-        return res.status(400).json({ error: 'Email, password, and role are required' });
+    if (!normalizedEmail || !password) {
+        return res.status(400).json({ error: 'Email and password are required' });
     }
 
     try {
         const result = await db.query(
-            'SELECT * FROM users WHERE email = $1 AND role = $2',
-            [email, role]
+            'SELECT * FROM users WHERE LOWER(email) = LOWER($1) ORDER BY id LIMIT 1',
+            [normalizedEmail]
         );
 
         if (result.rows.length === 0) {
@@ -39,7 +40,7 @@ export default async function handler(req, res) {
         let quizScores = [];
         let certificates = [];
 
-        if (role === 'student') {
+        if (user.role === 'student') {
             const enrollResult = await db.query(
                 'SELECT course_id FROM enrollments WHERE student_id = $1',
                 [user.id]
@@ -72,7 +73,7 @@ export default async function handler(req, res) {
 
         // Fetch instructor courses
         let courses = [];
-        if (role === 'instructor') {
+        if (user.role === 'instructor') {
             const coursesResult = await db.query(
                 'SELECT id FROM courses WHERE instructor_id = $1',
                 [user.id]
@@ -80,13 +81,18 @@ export default async function handler(req, res) {
             courses = coursesResult.rows.map(r => r.id);
         }
 
+        if (role && user.role !== role) {
+            // Ignore selected role mismatches and authenticate with real account role.
+            // This keeps login resilient when users choose the wrong role button.
+        }
+
         const userData = {
             id: user.id,
             name: user.name,
             email: user.email,
             role: user.role,
-            ...(role === 'student' && { enrolledCourses, completedLessons, quizScores, certificates }),
-            ...(role === 'instructor' && { courses }),
+            ...(user.role === 'student' && { enrolledCourses, completedLessons, quizScores, certificates }),
+            ...(user.role === 'instructor' && { courses }),
         };
 
         return res.status(200).json(userData);
