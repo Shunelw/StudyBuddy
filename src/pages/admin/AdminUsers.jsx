@@ -1,22 +1,39 @@
-import React, { useState } from "react";
-import { mockUsers } from "../../utils/mockData";
+import React, { useState, useEffect } from "react";
+import { apiGetUsers } from "../../utils/api";
 import "./AdminUsers.css";
 
-// Build a flat list of all users with their roles
-const allUsers = [
-    ...mockUsers.students.map(u => ({ ...u, role: 'student' })),
-    ...mockUsers.instructors.map(u => ({ ...u, role: 'instructor' })),
-    ...mockUsers.admins.map(u => ({ ...u, role: 'admin' })),
-];
-
 const AdminUsers = () => {
+    const [allUsers, setAllUsers] = useState([]);
+    const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState("");
+
+    useEffect(() => {
+        const fetchUsers = async () => {
+            try {
+                const data = await apiGetUsers();
+                setAllUsers(data);
+            } catch (err) {
+                console.error("Failed to load users:", err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchUsers();
+    }, []);
 
     const filteredUsers = allUsers.filter(user =>
         user.name.toLowerCase().includes(search.toLowerCase()) ||
         user.email.toLowerCase().includes(search.toLowerCase()) ||
         String(user.id).includes(search)
     );
+
+    if (loading) {
+        return (
+            <div className="admin-users-page">
+                <div className="container"><p>Loading...</p></div>
+            </div>
+        );
+    }
 
     return (
         <div className="admin-users-page">
@@ -41,11 +58,10 @@ const AdminUsers = () => {
                         <span>NAME</span>
                         <span>EMAIL</span>
                         <span>ROLE</span>
-                        {/* <span>ACTIONS</span> */}
                     </div>
 
                     {filteredUsers.map((user) => (
-                        <div key={`${user.role}-${user.id}`} className="table-row">
+                        <div key={user.id} className="table-row">
                             <span>{user.id}</span>
                             <span>{user.name}</span>
                             <span>{user.email}</span>
@@ -54,9 +70,6 @@ const AdminUsers = () => {
                                     {user.role}
                                 </span>
                             </span>
-                            {/* <span className="actions">
-                                <button className="view-btn">View Profile</button>
-                            </span> */}
                         </div>
                     ))}
 

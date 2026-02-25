@@ -1,55 +1,77 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../../utils/AuthContext';
-import { mockCourses, mockQuestions } from '../../utils/mockData';
+import { apiAskQuestion, apiGetCourses, apiGetQuestions } from '../../utils/api';
 import { MessageCircle, Send } from 'lucide-react';
 import './StudentQA.css';
 
-let nextQuestionId = mockQuestions.length + 1;
-
 const StudentQA = () => {
     const { user } = useAuth();
-
-    // All enrolled courses for the dropdown
-    const enrolledCourses = mockCourses.filter(c =>
-        (user.enrolledCourses || []).includes(c.id)
-    );
-
+    const [courses, setCourses] = useState([]);
+    const [qaList, setQaList] = useState([]);
     const [question, setQuestion] = useState('');
-    const [selectedCourse, setSelectedCourse] = useState(
-        enrolledCourses.length > 0 ? enrolledCourses[0].id : ''
-    );
-    const [qaList, setQaList] = useState(() =>
-        mockQuestions.filter(q => q.studentId === user.id)
-    );
+    const [selectedCourse, setSelectedCourse] = useState('');
+    const [loading, setLoading] = useState(true);
+    const [submitting, setSubmitting] = useState(false);
 
-    const handleAskQuestion = () => {
-        if (!question.trim() || !selectedCourse) return;
-
-        const course = mockCourses.find(c => c.id === Number(selectedCourse));
-        const newQuestion = {
-            id: nextQuestionId++,
-            studentId: user.id,
-            studentName: user.name,
-            courseId: Number(selectedCourse),
-            courseName: course?.title || '',
-            question: question.trim(),
-            date: new Date().toISOString().split('T')[0],
-            status: 'pending',
-            answer: null,
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const [allCourses, questions] = await Promise.all([
+                    apiGetCourses(),
+                    apiGetQuestions({ studentId: user.id }),
+                ]);
+                setCourses(allCourses);
+                setQaList(questions);
+            } catch (error) {
+                console.error('Failed to load student Q&A:', error);
+            } finally {
+                setLoading(false);
+            }
         };
 
-        // Add to mock list (in-memory only)
-        mockQuestions.push(newQuestion);
-        setQaList([...qaList, newQuestion]);
-        setQuestion('');
+        fetchData();
+    }, [user.id]);
+
+    const enrolledCourses = useMemo(
+        () => courses.filter(c => (user.enrolledCourses || []).includes(c.id)),
+        [courses, user.enrolledCourses]
+    );
+
+    useEffect(() => {
+        if (!selectedCourse && enrolledCourses.length > 0) {
+            setSelectedCourse(enrolledCourses[0].id);
+        }
+    }, [enrolledCourses, selectedCourse]);
+
+    const handleAskQuestion = async () => {
+        if (!question.trim() || !selectedCourse || submitting) return;
+        setSubmitting(true);
+        try {
+            await apiAskQuestion(user.id, Number(selectedCourse), question.trim());
+            const updated = await apiGetQuestions({ studentId: user.id });
+            setQaList(updated);
+            setQuestion('');
+        } catch (error) {
+            console.error('Failed to ask question:', error);
+            alert(`Failed to submit question: ${error.message}`);
+        } finally {
+            setSubmitting(false);
+        }
     };
+
+    if (loading) {
+        return (
+            <div className="qa-page container">
+                <p>Loading Q&A...</p>
+            </div>
+        );
+    }
 
     return (
         <div className="qa-page container">
             <h1>Q&amp;A</h1>
             <p>Ask questions about your enrolled courses</p>
 
-            {/* Ask Question */}
             <div className="qa-ask-box">
                 {enrolledCourses.length > 0 ? (
                     <>
@@ -67,9 +89,9 @@ const StudentQA = () => {
                             value={question}
                             onChange={(e) => setQuestion(e.target.value)}
                         />
-                        <button className="btn btn-primary" onClick={handleAskQuestion}>
+                        <button className="btn btn-primary" onClick={handleAskQuestion} disabled={submitting}>
                             <Send size={16} />
-                            Ask
+                            {submitting ? 'Sending...' : 'Ask'}
                         </button>
                     </>
                 ) : (
@@ -77,7 +99,6 @@ const StudentQA = () => {
                 )}
             </div>
 
-            {/* Questions List */}
             <div className="qa-list">
                 {qaList.length === 0 && (
                     <p>No questions yet. Be the first to ask!</p>

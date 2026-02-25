@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../utils/AuthContext';
+import { apiEnrollCourse } from '../../utils/api';
 import { CheckCircle, Lock, X, ArrowRight } from 'lucide-react';
 import './EnrollmentModal.css';
 
@@ -8,6 +9,7 @@ const EnrollmentModal = ({ course, onClose }) => {
     const { user, updateUser } = useAuth();
     const navigate = useNavigate();
     const [step, setStep] = useState(1); // 1: Confirm, 2: Payment (if paid), 3: Success
+    const [submitting, setSubmitting] = useState(false);
     const [paymentInfo, setPaymentInfo] = useState({
         cardNumber: '',
         expiry: '',
@@ -19,7 +21,7 @@ const EnrollmentModal = ({ course, onClose }) => {
 
     const handleEnroll = () => {
         if (isFree) {
-            completeEnrollment();
+            completeEnrollment(null);
         } else {
             setStep(2); // Go to payment
         }
@@ -27,17 +29,34 @@ const EnrollmentModal = ({ course, onClose }) => {
 
     const handlePayment = (e) => {
         e.preventDefault();
+        if (submitting) return;
+        setSubmitting(true);
         setTimeout(() => {
-            completeEnrollment();
+            completeEnrollment(paymentInfo);
         }, 500);
     };
 
-    const completeEnrollment = () => {
+    const completeEnrollment = async (paymentPayload) => {
+        setSubmitting(true);
         const enrolledCourses = user.enrolledCourses || [];
-        if (!enrolledCourses.includes(course.id)) {
-            updateUser({ enrolledCourses: [...enrolledCourses, course.id] });
+        try {
+            if (!enrolledCourses.includes(course.id)) {
+                await apiEnrollCourse(course.id, user.id, paymentPayload);
+                updateUser({ enrolledCourses: [...enrolledCourses, course.id] });
+            }
+            setStep(3); // Success
+        } catch (error) {
+            if (error.message === 'Already enrolled') {
+                if (!enrolledCourses.includes(course.id)) {
+                    updateUser({ enrolledCourses: [...enrolledCourses, course.id] });
+                }
+                setStep(3);
+                return;
+            }
+            alert(`Failed to enroll: ${error.message}`);
+        } finally {
+            setSubmitting(false);
         }
-        setStep(3); // Success
     };
 
     const handleViewCourse = () => {
@@ -113,8 +132,8 @@ const EnrollmentModal = ({ course, onClose }) => {
                             <button className="btn btn-outline" onClick={onClose}>
                                 Cancel
                             </button>
-                            <button className="btn btn-primary btn-lg" onClick={handleEnroll}>
-                                {isFree ? 'Enroll for Free' : 'Continue to Payment'}
+                            <button className="btn btn-primary btn-lg" onClick={handleEnroll} disabled={submitting}>
+                                {submitting ? 'Enrolling...' : isFree ? 'Enroll for Free' : 'Continue to Payment'}
                                 <ArrowRight size={20} />
                             </button>
                         </div>
@@ -199,8 +218,8 @@ const EnrollmentModal = ({ course, onClose }) => {
                                 <button type="button" className="btn btn-outline" onClick={() => setStep(1)}>
                                     Back
                                 </button>
-                                <button type="submit" className="btn btn-primary btn-lg">
-                                    Pay ${course.price}
+                                <button type="submit" className="btn btn-primary btn-lg" disabled={submitting}>
+                                    {submitting ? 'Processing...' : `Pay $${course.price}`}
                                 </button>
                             </div>
                         </form>

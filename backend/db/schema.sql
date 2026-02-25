@@ -4,6 +4,8 @@
 DROP TABLE IF EXISTS quiz_scores CASCADE;
 DROP TABLE IF EXISTS completed_lessons CASCADE;
 DROP TABLE IF EXISTS enrollments CASCADE;
+DROP TABLE IF EXISTS payments CASCADE;
+DROP TABLE IF EXISTS certificates CASCADE;
 DROP TABLE IF EXISTS quiz_questions CASCADE;
 DROP TABLE IF EXISTS quizzes CASCADE;
 DROP TABLE IF EXISTS lessons CASCADE;
@@ -120,6 +122,35 @@ CREATE TABLE quiz_scores (
 );
 
 -- ============================================================
+-- PAYMENTS
+-- ============================================================
+CREATE TABLE payments (
+    id SERIAL PRIMARY KEY,
+    student_id INT REFERENCES users(id) ON DELETE CASCADE,
+    course_id INT REFERENCES courses(id) ON DELETE CASCADE,
+    amount DECIMAL(10, 2) NOT NULL,
+    currency VARCHAR(10) DEFAULT 'USD',
+    status VARCHAR(20) DEFAULT 'paid' CHECK (status IN ('paid', 'failed', 'refunded')),
+    provider VARCHAR(50) DEFAULT 'card',
+    provider_reference VARCHAR(100),
+    card_last4 VARCHAR(4),
+    cardholder_name VARCHAR(255),
+    paid_at TIMESTAMP DEFAULT NOW()
+);
+
+-- ============================================================
+-- CERTIFICATES
+-- ============================================================
+CREATE TABLE certificates (
+    id SERIAL PRIMARY KEY,
+    student_id INT REFERENCES users(id) ON DELETE CASCADE,
+    course_id INT REFERENCES courses(id) ON DELETE CASCADE,
+    certificate_code VARCHAR(50) UNIQUE NOT NULL,
+    issued_at TIMESTAMP DEFAULT NOW(),
+    UNIQUE(student_id, course_id)
+);
+
+-- ============================================================
 -- Q&A QUESTIONS
 -- ============================================================
 CREATE TABLE questions (
@@ -152,6 +183,9 @@ CREATE INDEX idx_enrollments_student ON enrollments(student_id);
 CREATE INDEX idx_enrollments_course ON enrollments(course_id);
 CREATE INDEX idx_completed_lessons_student ON completed_lessons(student_id);
 CREATE INDEX idx_quiz_scores_student ON quiz_scores(student_id);
+CREATE INDEX idx_payments_student ON payments(student_id);
+CREATE INDEX idx_payments_course ON payments(course_id);
+CREATE INDEX idx_certificates_student ON certificates(student_id);
 CREATE INDEX idx_questions_student ON questions(student_id);
 CREATE INDEX idx_questions_course ON questions(course_id);
 CREATE INDEX idx_reports_user ON reports(user_id);

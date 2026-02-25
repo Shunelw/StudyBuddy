@@ -11,7 +11,7 @@ const Login = () => {
         role: 'student'
     });
     const [error, setError] = useState('');
-    const { login } = useAuth();
+    const { login, authError } = useAuth();
     const navigate = useNavigate();
 
     const handleChange = (e) => {
@@ -35,7 +35,7 @@ const Login = () => {
             };
             navigate(dashboardRoutes[formData.role]);
         } else {
-            setError('Invalid credentials. Please try again.');
+            setError(authError || 'Invalid credentials. Please try again.');
         }
     };
 

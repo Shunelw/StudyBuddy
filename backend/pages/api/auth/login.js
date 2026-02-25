@@ -37,6 +37,7 @@ export default async function handler(req, res) {
         let enrolledCourses = [];
         let completedLessons = [];
         let quizScores = [];
+        let certificates = [];
 
         if (role === 'student') {
             const enrollResult = await db.query(
@@ -56,6 +57,17 @@ export default async function handler(req, res) {
                 [user.id]
             );
             quizScores = scoresResult.rows;
+
+            const certificatesResult = await db.query(
+                `SELECT cert.id, cert.course_id AS "courseId", c.title AS "courseTitle",
+                        cert.certificate_code AS "certificateCode", cert.issued_at AS "issuedAt"
+                 FROM certificates cert
+                 JOIN courses c ON c.id = cert.course_id
+                 WHERE cert.student_id = $1
+                 ORDER BY cert.issued_at DESC`,
+                [user.id]
+            );
+            certificates = certificatesResult.rows;
         }
 
         // Fetch instructor courses
@@ -73,7 +85,7 @@ export default async function handler(req, res) {
             name: user.name,
             email: user.email,
             role: user.role,
-            ...(role === 'student' && { enrolledCourses, completedLessons, quizScores, certificates: [] }),
+            ...(role === 'student' && { enrolledCourses, completedLessons, quizScores, certificates }),
             ...(role === 'instructor' && { courses }),
         };
 

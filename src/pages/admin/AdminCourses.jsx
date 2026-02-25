@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { apiGetCourses, apiUpdateCourse, apiDeleteCourse } from '../../utils/api';
-import { Edit3, Trash2, X, Check } from 'lucide-react';
+import { apiGetCourses, apiUpdateCourse, apiDeleteCourse, apiGetCourseStudents } from '../../utils/api';
+import { Edit3, Trash2, X, Check, ChevronDown, ChevronUp, Users } from 'lucide-react';
 import './AdminCourses.css';
 
 const AdminCourses = () => {
@@ -8,6 +8,9 @@ const AdminCourses = () => {
     const [loading, setLoading] = useState(true);
     const [editingId, setEditingId] = useState(null);
     const [editForm, setEditForm] = useState({});
+    const [expandedId, setExpandedId] = useState(null);
+    const [enrolledStudents, setEnrolledStudents] = useState({}); // courseId → students[]
+    const [studentsLoading, setStudentsLoading] = useState({});
 
     const fetchCourses = async () => {
         try {
@@ -52,8 +55,29 @@ const AdminCourses = () => {
         try {
             await apiDeleteCourse(courseId);
             setCourses(courses.filter(c => c.id !== courseId));
+            // Clean up expanded state
+            if (expandedId === courseId) setExpandedId(null);
         } catch (err) {
             console.error('Failed to delete course:', err);
+        }
+    };
+
+    const toggleStudents = async (courseId) => {
+        if (expandedId === courseId) {
+            setExpandedId(null);
+            return;
+        }
+        setExpandedId(courseId);
+        if (!enrolledStudents[courseId]) {
+            setStudentsLoading(prev => ({ ...prev, [courseId]: true }));
+            try {
+                const students = await apiGetCourseStudents(courseId);
+                setEnrolledStudents(prev => ({ ...prev, [courseId]: students }));
+            } catch (err) {
+                console.error('Failed to load enrolled students:', err);
+            } finally {
+                setStudentsLoading(prev => ({ ...prev, [courseId]: false }));
+            }
         }
     };
 
@@ -140,7 +164,7 @@ const AdminCourses = () => {
                                         by {course.instructor}
                                     </p>
                                     <p>{course.category} · {course.level}</p>
-                                    <p>{course.students} students</p>
+                                    <p>{course.students} student{course.students !== 1 ? 's' : ''} enrolled</p>
 
                                     <div className="admin-actions">
                                         <button onClick={() => handleEdit(course)}>
@@ -153,6 +177,38 @@ const AdminCourses = () => {
                                             <Trash2 size={14} /> Delete
                                         </button>
                                     </div>
+
+                                    {/* Enrolled Students Toggle */}
+                                    <button
+                                        className="enrolled-toggle-btn"
+                                        onClick={() => toggleStudents(course.id)}
+                                    >
+                                        <Users size={14} />
+                                        {expandedId === course.id ? 'Hide' : 'View'} Enrolled Students
+                                        {expandedId === course.id ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                                    </button>
+
+                                    {expandedId === course.id && (
+                                        <div className="enrolled-students-panel">
+                                            {studentsLoading[course.id] ? (
+                                                <p className="enrolled-loading">Loading students...</p>
+                                            ) : enrolledStudents[course.id]?.length > 0 ? (
+                                                <ul className="enrolled-list">
+                                                    {enrolledStudents[course.id].map(s => (
+                                                        <li key={s.id} className="enrolled-item">
+                                                            <div className="enrolled-avatar">{s.name.charAt(0).toUpperCase()}</div>
+                                                            <div>
+                                                                <p className="enrolled-name">{s.name}</p>
+                                                                <p className="enrolled-email">{s.email}</p>
+                                                            </div>
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            ) : (
+                                                <p className="enrolled-empty">No students enrolled yet.</p>
+                                            )}
+                                        </div>
+                                    )}
                                 </>
                             )}
                         </div>

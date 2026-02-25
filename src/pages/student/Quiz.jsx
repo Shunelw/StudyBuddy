@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../utils/AuthContext';
-import { getCourseById } from '../../utils/mockData';
+import { apiGetCourse, apiSubmitQuiz } from '../../utils/api';
 import { Award, Clock, CheckCircle, XCircle, ArrowLeft, ArrowRight } from 'lucide-react';
 import './Quiz.css';
 
@@ -10,22 +10,49 @@ const Quiz = () => {
     const { user, updateUser } = useAuth();
     const navigate = useNavigate();
 
-    const course = getCourseById(courseId);
-    const quiz = course?.quizzes?.find(q => q.id === parseInt(quizId)) || null;
-
+    const [course, setCourse] = useState(null);
+    const [quiz, setQuiz] = useState(null);
+    const [loading, setLoading] = useState(true);
     const [currentQuestion, setCurrentQuestion] = useState(0);
     const [selectedAnswers, setSelectedAnswers] = useState({});
     const [showResults, setShowResults] = useState(false);
-    const [timeLeft, setTimeLeft] = useState(1800); // 30 minutes
+    const [timeLeft, setTimeLeft] = useState(1800);
 
-    React.useEffect(() => {
+    useEffect(() => {
+        const fetchCourse = async () => {
+            try {
+                const data = await apiGetCourse(courseId);
+                setCourse(data);
+                const foundQuiz = (data.quizzes || []).find(q => q.id === Number(quizId)) || null;
+                setQuiz(foundQuiz);
+            } catch (error) {
+                console.error('Failed to load quiz course:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchCourse();
+    }, [courseId, quizId]);
+
+    useEffect(() => {
         if (!showResults && timeLeft > 0) {
             const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
             return () => clearTimeout(timer);
-        } else if (timeLeft === 0 && !showResults) {
+        }
+        if (timeLeft === 0 && !showResults) {
             handleSubmit();
         }
+        return undefined;
     }, [timeLeft, showResults]);
+
+    if (loading) {
+        return (
+            <div className="container" style={{ padding: '4rem 0', textAlign: 'center' }}>
+                <p>Loading quiz...</p>
+            </div>
+        );
+    }
 
     if (!course || !quiz) {
         return (
@@ -39,10 +66,10 @@ const Quiz = () => {
     }
 
     const handleAnswerSelect = (questionId, answerIndex) => {
-        setSelectedAnswers({
-            ...selectedAnswers,
-            [questionId]: answerIndex
-        });
+        setSelectedAnswers(prev => ({
+            ...prev,
+            [questionId]: answerIndex,
+        }));
     };
 
     const handleNext = () => {
@@ -57,34 +84,6 @@ const Quiz = () => {
         }
     };
 
-    const handleSubmit = () => {
-        let correct = 0;
-        quiz.questions.forEach((question) => {
-            if (selectedAnswers[question.id] === question.correctAnswer) {
-                correct++;
-            }
-        });
-
-        const score = Math.round((correct / quiz.questions.length) * 100);
-
-        const quizScores = user.quizScores || [];
-        const newScore = {
-            quizId: quiz.id,
-            courseId: course.id,
-            score: score,
-            date: new Date().toISOString().split('T')[0]
-        };
-
-        updateUser({ quizScores: [...quizScores, newScore] });
-        setShowResults(true);
-    };
-
-    const formatTime = (seconds) => {
-        const mins = Math.floor(seconds / 60);
-        const secs = seconds % 60;
-        return `${mins}:${secs.toString().padStart(2, '0')}`;
-    };
-
     const calculateResults = () => {
         let correct = 0;
         quiz.questions.forEach((question) => {
@@ -95,8 +94,34 @@ const Quiz = () => {
         return {
             correct,
             total: quiz.questions.length,
-            score: Math.round((correct / quiz.questions.length) * 100)
+            score: Math.round((correct / quiz.questions.length) * 100),
         };
+    };
+
+    const handleSubmit = async () => {
+        const results = calculateResults();
+        try {
+            await apiSubmitQuiz(quiz.id, user.id, results.score);
+            const quizScores = user.quizScores || [];
+            const newScore = {
+                quizId: quiz.id,
+                courseId: course.id,
+                score: results.score,
+                date: new Date().toISOString(),
+            };
+            updateUser({ quizScores: [...quizScores, newScore] });
+        } catch (error) {
+            console.error('Failed to submit quiz score:', error);
+            alert(`Failed to submit quiz score: ${error.message}`);
+        }
+
+        setShowResults(true);
+    };
+
+    const formatTime = (seconds) => {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins}:${secs.toString().padStart(2, '0')}`;
     };
 
     if (showResults) {
@@ -118,14 +143,7 @@ const Quiz = () => {
                         <div className="results-score">
                             <div className="score-circle">
                                 <svg width="200" height="200">
-                                    <circle
-                                        cx="100"
-                                        cy="100"
-                                        r="80"
-                                        fill="none"
-                                        stroke="var(--border)"
-                                        strokeWidth="12"
-                                    />
+                                    <circle cx="100" cy="100" r="80" fill="none" stroke="var(--border)" strokeWidth="12" />
                                     <circle
                                         cx="100"
                                         cy="100"
@@ -223,7 +241,6 @@ const Quiz = () => {
                 </button>
 
                 <div className="quiz-container animate-fade-in">
-                    {/* Quiz Header */}
                     <div className="quiz-header">
                         <div>
                             <h1>{quiz.title}</h1>
@@ -235,7 +252,6 @@ const Quiz = () => {
                         </div>
                     </div>
 
-                    {/* Progress Bar */}
                     <div className="quiz-progress">
                         <div className="progress-info">
                             <span>Question {currentQuestion + 1} of {quiz.questions.length}</span>
@@ -246,16 +262,11 @@ const Quiz = () => {
                         </div>
                     </div>
 
-                    {/* Question */}
                     <div className="question-container">
                         <h2 className="question-text">{question.question}</h2>
-
                         <div className="options-list">
                             {question.options.map((option, index) => (
-                                <label
-                                    key={index}
-                                    className={`option-item ${selectedAnswers[question.id] === index ? 'selected' : ''}`}
-                                >
+                                <label key={index} className={`option-item ${selectedAnswers[question.id] === index ? 'selected' : ''}`}>
                                     <input
                                         type="radio"
                                         name={`question-${question.id}`}
@@ -270,22 +281,17 @@ const Quiz = () => {
                         </div>
                     </div>
 
-                    {/* Navigation */}
                     <div className="quiz-navigation">
-                        <button
-                            onClick={handlePrevious}
-                            disabled={currentQuestion === 0}
-                            className="btn btn-outline"
-                        >
+                        <button onClick={handlePrevious} disabled={currentQuestion === 0} className="btn btn-outline">
                             <ArrowLeft size={20} />
                             Previous
                         </button>
 
                         <div className="question-dots">
-                            {quiz.questions.map((_, index) => (
+                            {quiz.questions.map((q, index) => (
                                 <button
-                                    key={index}
-                                    className={`dot ${index === currentQuestion ? 'active' : ''} ${selectedAnswers[quiz.questions[index].id] !== undefined ? 'answered' : ''}`}
+                                    key={q.id || index}
+                                    className={`dot ${index === currentQuestion ? 'active' : ''} ${selectedAnswers[q.id] !== undefined ? 'answered' : ''}`}
                                     onClick={() => setCurrentQuestion(index)}
                                 >
                                     {index + 1}

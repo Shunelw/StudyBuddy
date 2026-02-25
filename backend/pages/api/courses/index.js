@@ -1,4 +1,4 @@
-import db from '../../lib/db';
+import db from '../../../lib/db';
 
 export default async function handler(req, res) {
     if (req.method === 'OPTIONS') {
@@ -10,9 +10,14 @@ export default async function handler(req, res) {
             const { instructorId } = req.query;
 
             let query = `
-        SELECT c.*, u.name AS instructor
+        SELECT c.*, u.name AS instructor, COALESCE(ec.enrolled_count, 0) AS enrolled_count
         FROM courses c
         LEFT JOIN users u ON c.instructor_id = u.id
+        LEFT JOIN (
+            SELECT course_id, COUNT(*)::int AS enrolled_count
+            FROM enrollments
+            GROUP BY course_id
+        ) ec ON ec.course_id = c.id
       `;
             const params = [];
 
@@ -64,7 +69,7 @@ export default async function handler(req, res) {
                         duration: course.duration,
                         price: parseFloat(course.price),
                         rating: parseFloat(course.rating),
-                        students: course.students_count,
+                        students: parseInt(course.enrolled_count, 10) || 0,
                         image: course.image,
                         lessons: lessonsResult.rows.map(l => ({
                             id: l.id,

@@ -7,15 +7,15 @@
 -- ============================================================
 -- student123
 INSERT INTO users (id, name, email, password_hash, role) VALUES
-(1, 'John Doe', 'john@example.com', '$2a$10$4fphYGosNas6SMBv.apWmuTAFj8EnITNWAqFCN8pSDXvqpfE9HXt.', 'student');
+(1, 'John Doe', 'john@example.com', '$2a$10$Dtwhk.MoWvpXtEFu9/FtIuyIZtQ9Y1hde8lGGdH/IIR/2VtpPQOJG', 'student');
 
 -- instructor123
 INSERT INTO users (id, name, email, password_hash, role) VALUES
-(2, 'T. JinChun Lu', 'jinchun@example.com', '$2a$10$l41GeLJFM94qjQ/BkRegc.l/ZlqkqQLtR8A4eY8wHrrB/d231//UC', 'instructor');
+(2, 'T. JinChun Lu', 'jinchun@example.com', '$2a$10$u2kcsR42T2OpDAeAwHIA4u/lA4u16U5YXJwv5C2x7S5MzTVCiBmoW', 'instructor');
 
 -- admin123
 INSERT INTO users (id, name, email, password_hash, role) VALUES
-(3, 'Admin User', 'admin@example.com', '$2a$10$H1MSRf16q3XUwRIim.pqjeSEN77XqrxnQXGIdGhYYK3SfY4MDVRVm', 'admin');
+(3, 'Admin User', 'admin@example.com', '$2a$10$QL3uwjQykuTY1NKIHKqVaOFLoeTSx5Efu4O6XUGj5qQTn2vLJmFki', 'admin');
 
 SELECT setval('users_id_seq', (SELECT MAX(id) FROM users));
 
@@ -106,6 +106,12 @@ INSERT INTO quiz_questions (quiz_id, question, options, correct_answer) VALUES
 INSERT INTO enrollments (student_id, course_id) VALUES
 (1, 1),
 (1, 2);
+
+-- ============================================================
+-- PAYMENTS
+-- ============================================================
+INSERT INTO payments (student_id, course_id, amount, currency, status, provider, provider_reference, card_last4, cardholder_name, paid_at) VALUES
+(1, 2, 79.99, 'USD', 'paid', 'card', 'seed-payment-1', '4242', 'John Doe', '2026-01-10');
 
 -- ============================================================
 -- COMPLETED LESSONS

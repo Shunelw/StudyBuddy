@@ -56,10 +56,10 @@ export const apiUpdateCourse = (id, courseData) =>
         body: JSON.stringify(courseData),
     });
 
-export const apiEnrollCourse = (courseId, studentId) =>
+export const apiEnrollCourse = (courseId, studentId, payment = null) =>
     request(`/courses/${courseId}/enroll`, {
         method: 'POST',
-        body: JSON.stringify({ studentId }),
+        body: JSON.stringify({ studentId, payment }),
     });
 
 export const apiGetLessons = (courseId) =>
@@ -100,6 +100,24 @@ export const apiAnswerQuestion = (questionId, answer) =>
         method: 'PUT',
         body: JSON.stringify({ answer }),
     });
+
+// ── Certificates ───────────────────────────────────────
+export const apiGetCertificates = (studentId) => {
+    const query = studentId ? `?studentId=${studentId}` : '';
+    return request(`/certificates${query}`);
+};
+
+export const apiIssueCertificate = (courseId, studentId) =>
+    request(`/courses/${courseId}/certificate`, {
+        method: 'POST',
+        body: JSON.stringify({ studentId }),
+    });
+
+// ── Payments ───────────────────────────────────────────
+export const apiGetPayments = (studentId) => {
+    const query = studentId ? `?studentId=${studentId}` : '';
+    return request(`/payments${query}`);
+};
 
 // ── Reports ────────────────────────────────────────────
 export const apiGetReports = () => request('/reports');

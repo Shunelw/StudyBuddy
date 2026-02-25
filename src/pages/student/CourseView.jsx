@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../utils/AuthContext';
-import { getCourseById } from '../../utils/mockData';
+import { apiCompleteLesson, apiEnrollCourse, apiGetCourse, apiIssueCertificate } from '../../utils/api';
 import {
     BookOpen, Play, Clock, Users, Star, CheckCircle,
     Lock, Award, ArrowLeft, Download
@@ -12,8 +12,33 @@ const CourseView = () => {
     const { courseId } = useParams();
     const { user, updateUser } = useAuth();
     const navigate = useNavigate();
-    const course = getCourseById(courseId);
+    const [course, setCourse] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [enrolling, setEnrolling] = useState(false);
     const [selectedLesson, setSelectedLesson] = useState(null);
+
+    useEffect(() => {
+        const fetchCourse = async () => {
+            try {
+                const data = await apiGetCourse(courseId);
+                setCourse(data);
+            } catch (err) {
+                console.error('Failed to load course:', err);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchCourse();
+    }, [courseId]);
+
+    if (loading) {
+        return (
+            <div className="container" style={{ padding: '4rem 0', textAlign: 'center' }}>
+                <p>Loading course...</p>
+            </div>
+        );
+    }
 
     if (!course) {
         return (
@@ -36,13 +61,40 @@ const CourseView = () => {
         percentage: totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0
     };
 
-    const handleEnroll = () => {
-        if (course.price === 0 || window.confirm(`Enroll in "${course.title}" for $${course.price}?`)) {
+    const handleEnroll = async () => {
+        if (!(course.price === 0 || window.confirm(`Enroll in "${course.title}" for $${course.price}?`))) {
+            return;
+        }
+
+        setEnrolling(true);
+        try {
             const enrolledCourses = user.enrolledCourses || [];
             if (!enrolledCourses.includes(course.id)) {
+                let payment = null;
+                if (course.price > 0) {
+                    const payerName = window.prompt('Cardholder name');
+                    const cardNumber = window.prompt('Card number (demo)');
+                    if (!payerName || !cardNumber) {
+                        setEnrolling(false);
+                        return;
+                    }
+                    payment = { name: payerName, cardNumber };
+                }
+
+                await apiEnrollCourse(course.id, user.id, payment);
                 updateUser({ enrolledCourses: [...enrolledCourses, course.id] });
             }
             alert('Successfully enrolled! You can now access all lessons.');
+        } catch (error) {
+            if (error.message === 'Already enrolled') {
+                if (!enrolledCourses.includes(course.id)) {
+                    updateUser({ enrolledCourses: [...enrolledCourses, course.id] });
+                }
+                return;
+            }
+            alert(`Failed to enroll: ${error.message}`);
+        } finally {
+            setEnrolling(false);
         }
     };
 
@@ -54,9 +106,31 @@ const CourseView = () => {
         setSelectedLesson(lesson);
     };
 
-    const handleCompleteLesson = (lessonId) => {
+    const handleCompleteLesson = async (lessonId) => {
         if (!completedLessonIds.includes(lessonId)) {
-            updateUser({ completedLessons: [...completedLessonIds, lessonId] });
+            try {
+                await apiCompleteLesson(course.id, user.id, lessonId);
+                const nextCompleted = [...completedLessonIds, lessonId];
+                let nextCertificates = user.certificates || [];
+
+                const totalLessonsForCourse = course.lessons.length;
+                const completedForCourse = course.lessons.filter(l => nextCompleted.includes(l.id)).length;
+                if (totalLessonsForCourse > 0 && completedForCourse === totalLessonsForCourse) {
+                    try {
+                        const cert = await apiIssueCertificate(course.id, user.id);
+                        if (!nextCertificates.some(c => c.courseId === cert.courseId)) {
+                            nextCertificates = [cert, ...nextCertificates];
+                            alert(`Certificate earned for "${course.title}"`);
+                        }
+                    } catch (certError) {
+                        console.error('Certificate issue error:', certError);
+                    }
+                }
+
+                updateUser({ completedLessons: nextCompleted, certificates: nextCertificates });
+            } catch (error) {
+                alert(`Failed to mark lesson complete: ${error.message}`);
+            }
         }
     };
 
@@ -68,7 +142,7 @@ const CourseView = () => {
         <div className="course-view-page">
             <div className="container">
                 {/* Back Button */}
-                <button onClick={() => navigate('/student/dashboard')} className="back-btn"> {/* i fixed '/student/courses' to '/student/dashboard'*/}
+                <button onClick={() => navigate('/student/dashboard')} className="back-btn">
                     <ArrowLeft size={20} />
                     Back to Courses
                 </button>
@@ -123,8 +197,8 @@ const CourseView = () => {
                                             <span className="paid-price">${course.price}</span>
                                         )}
                                     </div>
-                                    <button onClick={handleEnroll} className="btn btn-primary btn-lg btn-block">
-                                        Enroll Now
+                                    <button onClick={handleEnroll} className="btn btn-primary btn-lg btn-block" disabled={enrolling}>
+                                        {enrolling ? 'Enrolling...' : 'Enroll Now'}
                                     </button>
                                     <div className="enroll-info">
                                         <CheckCircle size={16} />

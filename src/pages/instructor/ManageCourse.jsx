@@ -22,7 +22,16 @@ const ManageCourse = () => {
         videoUrl: ''
     });
 
-    const [quizForm, setQuizForm] = useState({ title: '' });
+    const blankQuestion = () => ({
+        question: '',
+        options: ['', '', '', ''],
+        correctAnswer: 0,
+    });
+
+    const [quizForm, setQuizForm] = useState({
+        title: '',
+        questions: [blankQuestion()],
+    });
 
     // Fetch course data from API
     const fetchCourse = async () => {
@@ -76,12 +85,27 @@ const ManageCourse = () => {
     /* ---------------- QUIZZES ---------------- */
 
     const addQuiz = async () => {
-        if (!quizForm.title) return;
+        if (!quizForm.title.trim()) return;
+        const hasInvalidQuestion = quizForm.questions.some(
+            q => !q.question.trim() || q.options.some(opt => !opt.trim())
+        );
+        if (hasInvalidQuestion) {
+            alert('Each question needs text and all 4 choices filled in.');
+            return;
+        }
+
         setSaving(true);
         try {
-            const newQuiz = await apiAddQuiz(courseId, { title: quizForm.title });
+            const newQuiz = await apiAddQuiz(courseId, {
+                title: quizForm.title.trim(),
+                questions: quizForm.questions.map(q => ({
+                    question: q.question.trim(),
+                    options: q.options.map(opt => opt.trim()),
+                    correctAnswer: q.correctAnswer,
+                })),
+            });
             setQuizzes([...quizzes, newQuiz]);
-            setQuizForm({ title: '' });
+            setQuizForm({ title: '', questions: [blankQuestion()] });
         } catch (err) {
             console.error('Failed to add quiz:', err);
         } finally {
@@ -99,6 +123,39 @@ const ManageCourse = () => {
         } finally {
             setSaving(false);
         }
+    };
+
+    const updateQuizQuestion = (index, question) => {
+        const next = [...quizForm.questions];
+        next[index] = { ...next[index], question };
+        setQuizForm({ ...quizForm, questions: next });
+    };
+
+    const updateQuizOption = (qIndex, optionIndex, optionValue) => {
+        const next = [...quizForm.questions];
+        const nextOptions = [...next[qIndex].options];
+        nextOptions[optionIndex] = optionValue;
+        next[qIndex] = { ...next[qIndex], options: nextOptions };
+        setQuizForm({ ...quizForm, questions: next });
+    };
+
+    const setCorrectAnswer = (qIndex, optionIndex) => {
+        const next = [...quizForm.questions];
+        next[qIndex] = { ...next[qIndex], correctAnswer: optionIndex };
+        setQuizForm({ ...quizForm, questions: next });
+    };
+
+    const addQuestion = () => {
+        setQuizForm({
+            ...quizForm,
+            questions: [...quizForm.questions, blankQuestion()],
+        });
+    };
+
+    const removeQuestion = (index) => {
+        if (quizForm.questions.length === 1) return;
+        const next = quizForm.questions.filter((_, i) => i !== index);
+        setQuizForm({ ...quizForm, questions: next });
     };
 
     return (
@@ -222,13 +279,67 @@ const ManageCourse = () => {
                     <div className="form-card dashed">
                         <h2>Add New Quiz</h2>
 
+                        <label>Quiz Title</label>
                         <input
                             placeholder="Quiz title"
                             value={quizForm.title}
                             onChange={e =>
-                                setQuizForm({ title: e.target.value })
+                                setQuizForm({ ...quizForm, title: e.target.value })
                             }
                         />
+
+                        <div className="quiz-questions-builder">
+                            {quizForm.questions.map((question, qIndex) => (
+                                <div className="quiz-question-card" key={qIndex}>
+                                    <div className="quiz-question-header">
+                                        <h4>Question {qIndex + 1}</h4>
+                                        {quizForm.questions.length > 1 && (
+                                            <button
+                                                type="button"
+                                                className="danger-btn"
+                                                onClick={() => removeQuestion(qIndex)}
+                                                disabled={saving}
+                                            >
+                                                Remove
+                                            </button>
+                                        )}
+                                    </div>
+
+                                    <label>Question</label>
+                                    <input
+                                        placeholder="Enter question text"
+                                        value={question.question}
+                                        onChange={(e) => updateQuizQuestion(qIndex, e.target.value)}
+                                    />
+
+                                    <label>Choices</label>
+                                    <div className="quiz-options-grid">
+                                        {question.options.map((opt, optIndex) => (
+                                            <div key={optIndex} className="quiz-option-row">
+                                                <input
+                                                    placeholder={`Choice ${optIndex + 1}`}
+                                                    value={opt}
+                                                    onChange={(e) => updateQuizOption(qIndex, optIndex, e.target.value)}
+                                                />
+                                                <label className="correct-choice-label">
+                                                    <input
+                                                        type="radio"
+                                                        name={`correct-${qIndex}`}
+                                                        checked={question.correctAnswer === optIndex}
+                                                        onChange={() => setCorrectAnswer(qIndex, optIndex)}
+                                                    />
+                                                    Correct
+                                                </label>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        <button className="primary-btn" type="button" onClick={addQuestion} disabled={saving}>
+                            + Add Question
+                        </button>
 
                         <button className="primary-btn" onClick={addQuiz} disabled={saving}>
                             {saving ? 'Adding...' : '+ Add Quiz'}
@@ -245,6 +356,18 @@ const ManageCourse = () => {
                                 <div>
                                     <h4>{q.title}</h4>
                                     <span>{q.questions?.length || 0} questions</span>
+                                    {(q.questions || []).map((question, qIndex) => (
+                                        <div key={question.id || `${q.id}-q-${qIndex}`} className="quiz-question-preview">
+                                            <p><strong>Q{qIndex + 1}:</strong> {question.question}</p>
+                                            <ul>
+                                                {(question.options || []).map((choice, cIndex) => (
+                                                    <li key={`${q.id}-q-${qIndex}-c-${cIndex}`}>
+                                                        {choice}
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    ))}
                                 </div>
                                 <button
                                     className="danger-btn"

@@ -1,38 +1,61 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../utils/AuthContext';
-import { mockCourses, mockQuestions, mockUsers } from '../../utils/mockData';
-import { BookOpen, Users, MessageCircle, Award, Plus } from 'lucide-react';
+import { apiGetCourses, apiGetCourseStudents, apiGetQuestions } from '../../utils/api';
+import { BookOpen, Users, MessageCircle, Plus } from 'lucide-react';
 import '../student/StudentDashboard.css';
 import './InstructorDashboard.css';
 
 const InstructorDashboard = () => {
     const { user } = useAuth();
+    const [courses, setCourses] = useState([]);
+    const [totalStudents, setTotalStudents] = useState(0);
+    const [pendingQuestions, setPendingQuestions] = useState([]);
+    const [loading, setLoading] = useState(true);
 
-    // All courses taught by this instructor
-    const instructorCourses = mockCourses.filter(c => c.instructorId === user.id);
+    useEffect(() => {
+        const fetchCourses = async () => {
+            try {
+                const data = await apiGetCourses(user.id);
+                setCourses(data);
 
-    // All pending questions across instructor's courses
-    const myCourseIds = instructorCourses.map(c => c.id);
-    const pendingQuestions = mockQuestions.filter(
-        q => q.status === 'pending' && myCourseIds.includes(q.courseId)
-    );
+                // Fetch enrolled student count across all courses (deduplicated)
+                const studentIdSet = new Set();
+                for (const course of data) {
+                    const students = await apiGetCourseStudents(course.id);
+                    students.forEach(s => studentIdSet.add(s.id));
+                }
+                setTotalStudents(studentIdSet.size);
 
-    // Total real students enrolled across all instructor courses
-    const totalStudents = mockUsers.students.filter(s =>
-        s.enrolledCourses.some(cid => myCourseIds.includes(cid))
-    ).length;
+                const questionLists = await Promise.all(
+                    data.map(course => apiGetQuestions({ courseId: course.id }))
+                );
+                const allQuestions = questionLists.flat();
+                const uniqueQuestions = Array.from(new Map(allQuestions.map(q => [q.id, q])).values());
+                setPendingQuestions(uniqueQuestions.filter(q => q.status === 'pending'));
+            } catch (err) {
+                console.error('Failed to load instructor courses:', err);
+            } finally {
+                setLoading(false);
+            }
+        };
 
-    // const avgRating = instructorCourses.length > 0
-    //     ? (instructorCourses.reduce((acc, c) => acc + c.rating, 0) / instructorCourses.length).toFixed(1)
-    //     : '0.0';
+        fetchCourses();
+    }, [user.id]);
 
     const stats = [
-        { icon: BookOpen, label: 'My Courses', value: instructorCourses.length, color: 'primary' },
+        { icon: BookOpen, label: 'My Courses', value: courses.length, color: 'primary' },
         { icon: Users, label: 'Total Students', value: totalStudents, color: 'success' },
         { icon: MessageCircle, label: 'Pending Questions', value: pendingQuestions.length, color: 'warning' },
-        // { icon: Award, label: 'Avg Rating', value: avgRating, color: 'accent' },
     ];
+
+    if (loading) {
+        return (
+            <div className="dashboard-page">
+                <div className="container"><p>Loading...</p></div>
+            </div>
+        );
+    }
 
     return (
         <div className="dashboard-page">
@@ -77,49 +100,38 @@ const InstructorDashboard = () => {
                             <Link to="/instructor/courses" className="view-all">View All</Link>
                         </div>
 
-                        {instructorCourses.length > 0 ? (
+                        {courses.length > 0 ? (
                             <div className="courses-grid-instructor">
-                                {instructorCourses.map((course, index) => {
-                                    // Count real enrolled students for this course
-                                    const enrolledCount = mockUsers.students.filter(s =>
-                                        s.enrolledCourses.includes(course.id)
-                                    ).length;
-
-                                    return (
-                                        <div
-                                            key={course.id}
-                                            className="instructor-course-card animate-fade-in"
-                                            style={{ animationDelay: `${index * 0.1}s` }}
-                                        >
-                                            <div className="course-thumbnail">
-                                                <img src={course.image} alt={course.title} />
-                                                <div className="course-overlay">
-                                                    <Link to={`/instructor/course/${course.id}`} className="btn btn-outline btn-sm">
-                                                        Manage Course
-                                                    </Link>
-                                                </div>
+                                {courses.map((course, index) => (
+                                    <div
+                                        key={course.id}
+                                        className="instructor-course-card animate-fade-in"
+                                        style={{ animationDelay: `${index * 0.1}s` }}
+                                    >
+                                        <div className="course-thumbnail">
+                                            <img src={course.image} alt={course.title} />
+                                            <div className="course-overlay">
+                                                <Link to={`/instructor/course/${course.id}`} className="btn btn-outline btn-sm">
+                                                    Manage Course
+                                                </Link>
                                             </div>
-                                            <div className="course-info">
-                                                <span className="course-category">{course.category}</span>
-                                                <h3>{course.title}</h3>
-                                                <div className="course-stats">
-                                                    <div className="stat-item">
-                                                        <Users size={16} />
-                                                        <span>{enrolledCount} student{enrolledCount !== 1 ? 's' : ''} enrolled</span>
-                                                    </div>
-                                                    {/* <div className="stat-item">
-                                                        <Award size={16} />
-                                                        <span>{course.rating} rating</span>
-                                                    </div> */}
-                                                    <div className="stat-item">
-                                                        <BookOpen size={16} />
-                                                        <span>{course.lessons.length} lessons</span>
-                                                    </div>
+                                        </div>
+                                        <div className="course-info">
+                                            <span className="course-category">{course.category}</span>
+                                            <h3>{course.title}</h3>
+                                            <div className="course-stats">
+                                                <div className="stat-item">
+                                                    <Users size={16} />
+                                                    <span>{course.students} student{course.students !== 1 ? 's' : ''} enrolled</span>
+                                                </div>
+                                                <div className="stat-item">
+                                                    <BookOpen size={16} />
+                                                    <span>{course.lessons?.length || 0} lessons</span>
                                                 </div>
                                             </div>
                                         </div>
-                                    );
-                                })}
+                                    </div>
+                                ))}
                             </div>
                         ) : (
                             <div className="empty-state">

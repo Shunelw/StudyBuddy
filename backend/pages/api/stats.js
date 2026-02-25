@@ -19,12 +19,11 @@ export default async function handler(req, res) {
             'SELECT COUNT(DISTINCT student_id) AS count FROM enrollments'
         );
 
-        // Revenue = sum of course prices * number of enrollments for paid courses
+        // Revenue = sum of successful payments
         const revenueResult = await db.query(
-            `SELECT COALESCE(SUM(c.price), 0) AS total
-       FROM enrollments e
-       JOIN courses c ON e.course_id = c.id
-       WHERE c.price > 0`
+            `SELECT COALESCE(SUM(amount), 0) AS total
+       FROM payments
+       WHERE status = 'paid'`
         );
 
         // Completion rate = completed lessons / total possible lessons per enrolled student

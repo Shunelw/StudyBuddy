@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../utils/AuthContext';
-import { mockCourses, mockCategories } from '../../utils/mockData';
+import { apiGetCategories, apiGetCourses } from '../../utils/api';
 import CourseCard from '../../components/common/CourseCard';
 import EnrollmentModal from '../../pages/student/EnrollmentModal';
 import { Search, Filter, BookOpen } from 'lucide-react';
@@ -13,15 +13,45 @@ const Courses = () => {
     const [selectedCategory, setSelectedCategory] = useState('All');
     const [selectedLevel, setSelectedLevel] = useState('All');
     const [enrollingCourse, setEnrollingCourse] = useState(null);
+    const [courses, setCourses] = useState([]);
+    const [categories, setCategories] = useState([]);
+    const [loading, setLoading] = useState(true);
 
     const enrolledCourseIds = user?.enrolledCourses || [];
 
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const [coursesData, categoriesData] = await Promise.all([
+                    apiGetCourses(),
+                    apiGetCategories(),
+                ]);
+
+                setCourses(coursesData);
+                if (categoriesData?.length > 0) {
+                    setCategories(categoriesData);
+                } else {
+                    const fallbackCategories = [...new Set(coursesData.map(c => c.category))]
+                        .filter(Boolean)
+                        .map((name, idx) => ({ id: idx + 1, name }));
+                    setCategories(fallbackCategories);
+                }
+            } catch (err) {
+                console.error('Failed to load courses:', err);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchData();
+    }, []);
+
     const handleEnroll = (courseId) => {
-        const course = mockCourses.find(c => c.id === courseId);
+        const course = courses.find(c => c.id === courseId);
         if (course) setEnrollingCourse(course);
     };
 
-    const filteredCourses = mockCourses.filter(course => {
+    const filteredCourses = courses.filter(course => {
         const matchesSearch =
             course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
             course.description.toLowerCase().includes(searchTerm.toLowerCase());
@@ -29,6 +59,16 @@ const Courses = () => {
         const matchesLevel = selectedLevel === 'All' || course.level === selectedLevel;
         return matchesSearch && matchesCategory && matchesLevel;
     });
+
+    if (loading) {
+        return (
+            <div className="courses-page">
+                <div className="container">
+                    <p>Loading courses...</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="courses-page">
@@ -42,7 +82,7 @@ const Courses = () => {
                     <div className="header-stats">
                         <div className="stat-badge">
                             <BookOpen size={20} />
-                            <span>{mockCourses.length} Courses Available</span>
+                            <span>{courses.length} Courses Available</span>
                         </div>
                     </div>
                 </div>
@@ -67,7 +107,7 @@ const Courses = () => {
                                 onChange={(e) => setSelectedCategory(e.target.value)}
                             >
                                 <option value="All">All Categories</option>
-                                {mockCategories.map(cat => (
+                                {categories.map(cat => (
                                     <option key={cat.id} value={cat.name}>{cat.name}</option>
                                 ))}
                             </select>
@@ -96,7 +136,7 @@ const Courses = () => {
                         >
                             All Courses
                         </button>
-                        {mockCategories.map(cat => (
+                        {categories.map(cat => (
                             <button
                                 key={cat.id}
                                 className={`category-chip ${selectedCategory === cat.name ? 'active' : ''}`}

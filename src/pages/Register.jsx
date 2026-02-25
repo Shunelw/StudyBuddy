@@ -13,7 +13,7 @@ const Register = () => {
         role: 'student'
     });
     const [error, setError] = useState('');
-    const { register } = useAuth();
+    const { register, authError } = useAuth();
     const navigate = useNavigate();
 
     const handleChange = (e) => {
@@ -53,7 +53,7 @@ const Register = () => {
             };
             navigate(dashboardRoutes[formData.role]);
         } else {
-            setError('Registration failed. Email may already be in use.');
+            setError(authError || 'Registration failed. Email may already be in use.');
         }
     };
 
