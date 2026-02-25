@@ -56,24 +56,24 @@ SELECT
 FROM completed_lessons
 WHERE student_id = 1;
 
--- View total quizzes taken by a student
+-- 9. View total quizzes taken by a student
 SELECT 
     COUNT(*) AS total_quizzes_taken4
 FROM quiz_scores
 WHERE student_id = 1;
 
--- View average quiz score for a student
+-- 10. View average quiz score for a student
 SELECT 
     ROUND(AVG(score), 2) AS average_score
 FROM quiz_scores
 WHERE student_id = 1;
 
--- 9. Submit quiz score after taking quiz
+-- 11. Submit quiz score after taking quiz
 INSERT INTO quiz_scores (student_id, quiz_id, score, taken_at) VALUES
 (1, 1, 85, '2026-01-15'),
 (1, 2, 92, '2026-01-20');
 
--- view total correct percent for quizz
+-- 12. View total correct percent for quizz
 SELECT 
     COUNT(*) AS total_quizzes_taken,
     ROUND(AVG(score), 2) AS average_correct_percentage,
@@ -82,14 +82,14 @@ FROM quiz_scores
 WHERE student_id = 1;
 
 
--- 10. View my quiz scores
+-- 13. View my quiz scores
 SELECT q.title, qs.score, qs.taken_at
 FROM quiz_scores qs
 JOIN quizzes q ON qs.quiz_id = q.id
 WHERE qs.student_id = 1;
 
 
--- 11. Ask question in course Q&A
+-- 14. Ask question in course Q&A
 INSERT INTO questions (
 	id, 
 	student_id, 
@@ -103,12 +103,12 @@ VALUES
 	(2, 1, 1, 'What is the difference between padding and margin?', 'Padding is the space inside an element, while margin is the space outside an element.', 'answered', '2026-01-20');
 
 
--- 12. View my submitted questions
+-- 15. View my submitted questions
 SELECT * FROM questions
 WHERE student_id = 1;
 
 
--- 13. Make payment for a course
+-- 16. Make payment for a course
 INSERT INTO payments (
 	student_id, 
 	course_id, 
@@ -124,14 +124,14 @@ VALUES
 (1, 2, 79.99, 'USD', 'paid', 'card', 'seed-payment-1', '4242', 'John Doe', '2026-01-10');
 
 
--- 14. View my certificates
+-- 17. View my certificates
 SELECT c.title, cert.certificate_code, cert.issued_at
 FROM certificates cert
 JOIN courses c ON cert.course_id = c.id
 WHERE cert.student_id = 1;
 
 
--- 15. Submit system report (technical/content issue)
+-- 18. Submit system report (technical/content issue)
 INSERT INTO reports (id, type, user_id, subject, description, status, created_at) VALUES
 (1, 'technical', 1, 'Video not loading in Lesson 3', 'The video in lesson 3 keeps buffering and won''t play.', 'pending', '2026-01-26'),
 (2, 'content', 1, 'Video buffering', 'The video in lesson 5 keeps buffering.', 'resolved', '2026-01-24');
@@ -143,12 +143,12 @@ INSERT INTO reports (id, type, user_id, subject, description, status, created_at
 -- 👨‍🏫 INSTRUCTOR FUNCTIONS
 -- ============================================================
 
--- 2. Login (Backend verifies password)
+-- 19. Login (Backend verifies password)
 SELECT * FROM users
 WHERE email = 'jinchun@example.com'
 AND role = 'instructor';
 
--- 16. Create new course
+-- 20. Create new course
 INSERT INTO courses (id, title, description, instructor_id, category, level, duration, price, rating, students_count, image) VALUES
 (1, 'Introduction to Web Development', 'Learn the fundamentals of HTML, CSS, and JavaScript to build modern websites.', 2, 'Programming', 'Beginner', '8 weeks', 0, 4.8, 1250, 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=400'),
 (2, 'Data Science with Python', 'Master data analysis, visualization, and machine learning with Python.', 2, 'Data Science', 'Intermediate', '12 weeks', 79.99, 4.9, 890, 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400'),
@@ -158,25 +158,25 @@ INSERT INTO courses (id, title, description, instructor_id, category, level, dur
 (6, 'Database System with PostgreSQL', 'Learn relational database design and SQL using PostgreSQL.', 2, 'Data Science', 'Intermediate', '8 weeks', 0, 4.9, 1120, 'https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=400'),
 (7, 'Software Project Management', 'Manage software projects using Agile and Scrum.', 2, 'Business', 'Beginner', '6 weeks', 39.99, 4.5, 760, 'https://images.unsplash.com/photo-1553877522-43269d4ea984?w=400');
 
--- View total number of courses created by instructor (Instructor ID = 2)
+-- 21. View total number of courses created by instructor (Instructor ID = 2)
 SELECT COUNT(*) AS total_courses_created
 FROM courses
 WHERE instructor_id = 2;
 
--- 17. Update course details
+-- 22. Update course details
 UPDATE courses
 SET price = 59.99
 WHERE id = 1
 AND instructor_id = 2;
 
 
--- 18. Delete course
+-- 23. Delete course
 DELETE FROM courses
 WHERE id = 1
 AND instructor_id = 2;
 
 
--- 19. Add lesson to course
+-- 24. Add lesson to course
 INSERT INTO lessons (id, course_id, title, description, duration, content, video_url, sort_order) VALUES
 -- Course 1: Web Development
 (1, 1, 'HTML Basics', 'Introduction to HTML structure and elements', '45 min', 'Learn about HTML tags, attributes, and document structure...', '#', 1),
@@ -202,14 +202,14 @@ INSERT INTO lessons (id, course_id, title, description, duration, content, video
 
 
 
--- 20. Create quiz for course
+-- 25. Create quiz for course
 INSERT INTO quizzes (id, course_id, title) VALUES
 (1, 1, 'HTML Quiz'),
 (2, 2, 'Python Fundamentals Quiz'),
 (3, 3, 'Digital Marketing Basics Quiz'),
 (4, 4, 'UI/UX Fundamentals Quiz');
 
--- 21. Add quiz question
+-- 26. Add quiz question
 INSERT INTO quiz_questions (quiz_id, question, options, correct_answer) VALUES
 -- Quiz 1: HTML
 (1, 'What does HTML stand for?', '["Hyper Text Markup Language", "High Tech Modern Language", "Home Tool Markup Language", "Hyperlinks and Text Markup Language"]', 0),
@@ -223,13 +223,13 @@ INSERT INTO quiz_questions (quiz_id, question, options, correct_answer) VALUES
 (4, 'What does UX stand for?', '["User Experience", "User Extension", "Unified Experience", "User Execution"]', 0);
 
 
--- 22. Answer student question
+-- 27. Answer student question
 UPDATE questions
 SET answer = 'Use display:flex;',
     status = 'answered'
 WHERE id = 1;
 
--- View all student questions for courses owned by instructor
+-- 28. View all student questions for courses owned by instructor
 SELECT 
     q.id,
     u.name AS student_name,
@@ -244,7 +244,7 @@ JOIN users u ON q.student_id = u.id
 WHERE c.instructor_id = 2
 ORDER BY q.created_at DESC;
 
---  View Only Pending (Unanswered) Questions
+-- 29. View Only Pending (Unanswered) Questions
 SELECT 
     q.id,
     u.name AS student_name,
@@ -258,14 +258,14 @@ WHERE c.instructor_id = 2
 AND q.status = 'pending'
 ORDER BY q.created_at DESC;
 
--- -- Instructor replies to question id = 1
+-- 30. Instructor replies to question id = 1
 UPDATE questions
 SET 
     answer = 'You can center a div using flexbox: display:flex; justify-content:center; align-items:center;',
     status = 'answered'
 WHERE id = 1;
 
--- 23. View students enrolled in my course
+-- 31. View students enrolled in my course
 SELECT u.id, u.name, u.email
 FROM enrollments e
 JOIN users u ON e.student_id = u.id
@@ -278,17 +278,17 @@ WHERE c.instructor_id = 2;
 -- 👨‍💼 ADMIN FUNCTIONS
 -- ============================================================
 
--- 26. View all payments
+-- 32. View all payments
 SELECT p.*, u.name, c.title
 FROM payments p
 JOIN users u ON p.student_id = u.id
 JOIN courses c ON p.course_id = c.id;
 
--- Delete course (example: course id = 3)
+-- 33. Delete course (example: course id = 3)
 DELETE FROM courses
 WHERE id = 3;
 
--- Update course details (example: course id = 2)
+-- 34. Update course details (example: course id = 2)
 UPDATE courses
 SET 
     title = 'Advanced Data Science with Python',
@@ -297,7 +297,7 @@ SET
     duration = '14 weeks'
 WHERE id = 2;
 
--- View total students for course id = 1
+-- 35. View total students for course id = 1
 SELECT 
     c.id,
     c.title,
@@ -307,7 +307,7 @@ LEFT JOIN enrollments e ON c.id = e.course_id
 WHERE c.id = 1
 GROUP BY c.id, c.title;
 
--- View Students Enrolled in a Course
+-- 36. View Students Enrolled in a Course
 SELECT 
     u.id AS student_id,
     u.name AS student_name,
@@ -319,25 +319,25 @@ WHERE e.course_id = 1
 AND u.role = 'student'
 ORDER BY e.enrolled_at DESC;
 
--- Total users in platform
+-- 37. Total users in platform
 SELECT COUNT(*) AS total_users
 FROM users;
 
--- Total enrollments 
+-- 38. Total enrollments 
 SELECT COUNT(*) AS total_enrollments
 FROM enrollments;
 
--- Total courses created
+-- 39. Total courses created
 SELECT COUNT(*) AS total_courses
 FROM courses;
 
--- Total revenue from paid courses
+-- 40. Total revenue from paid courses
 SELECT 
     SUM(amount) AS total_revenue
 FROM payments
 WHERE status = 'paid';
 
--- Total completion rate
+-- 41. Total completion rate
 SELECT 
     ROUND(
         (COUNT(DISTINCT cl.lesson_id)::decimal / 
@@ -345,17 +345,17 @@ SELECT
     2) AS overall_completion_percentage
 FROM completed_lessons cl;
 
--- Total Active users
+-- 42. Total Active users
 SELECT COUNT(DISTINCT student_id) AS active_quiz_users
 FROM quiz_scores
 WHERE taken_at >= NOW() - INTERVAL '30 days';
 
--- View pending reports
+-- 43. View pending reports
 SELECT COUNT(*) AS pending_reports
 FROM reports
 WHERE status = 'pending';
 
--- View total users
+-- 44. View total users
 SELECT 
     id,
     name,
@@ -364,13 +364,13 @@ FROM users
 WHERE role IN ('student', 'instructor')
 ORDER BY role, name;
 
--- 27. Update report status
+-- 45. Update report status
 UPDATE reports
 SET status = 'resolved'
 WHERE id = 1;
 
 
--- 28. Issue certificate to student
+-- 46. Issue certificate to student
 INSERT INTO certificates (
     student_id, course_id, certificate_code
 )
@@ -382,17 +382,3 @@ VALUES (
 
 
 
--- ============================================================
--- 📊 EXTRA SYSTEM QUERIES (Analytics / Useful Operations)
--- ============================================================
-
--- Count number of students in a course
-SELECT COUNT(*)
-FROM enrollments
-WHERE course_id = 1;
-
-
--- Get average quiz score for a student
-SELECT AVG(score)
-FROM quiz_scores
-WHERE student_id = 1;
