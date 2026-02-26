@@ -72,20 +72,20 @@ const ManageCourse = () => {
     saveCourse({ ...course, lessons: nextLessons });
   };
 
-  const deleteLesson = (id) => {
-    const nextLessons = lessons.filter((l) => l.id !== id);
-    setLessons(nextLessons);
-    saveCourse({ ...course, lessons: nextLessons });
-  };
+  // const deleteLesson = (id) => {
+  //   const nextLessons = lessons.filter((l) => l.id !== id);
+  //   setLessons(nextLessons);
+  //   saveCourse({ ...course, lessons: nextLessons });
+  // };
 
-  const addQuiz = () => {
-    if (!quizForm.title) return;
-    const newQuiz = { id: Date.now(), title: quizForm.title, questions: [] };
-    const nextQuizzes = [...quizzes, newQuiz];
-    setQuizzes(nextQuizzes);
-    setQuizForm({ title: '' });
-    saveCourse({ ...course, quizzes: nextQuizzes });
-  };
+  // const addQuiz = () => {
+  //   if (!quizForm.title) return;
+  //   const newQuiz = { id: Date.now(), title: quizForm.title, questions: [] };
+  //   const nextQuizzes = [...quizzes, newQuiz];
+  //   setQuizzes(nextQuizzes);
+  //   setQuizForm({ title: '' });
+  //   saveCourse({ ...course, quizzes: nextQuizzes });
+  // };
 
   const deleteQuiz = (id) => {
     const nextQuizzes = quizzes.filter((q) => q.id !== id);
