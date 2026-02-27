@@ -2,7 +2,7 @@
 
 A React + Vite SPA for the StudyBuddy learning management platform. Students can browse courses, enroll, track progress, take quizzes, and use Q&A — while instructors and admins have their own dashboards.
 
-> **Backend repo:** https://github.com/YiN189/studybuddy-api
+> **Backend repo:** https://github.com/YiN189/study-buddy-api
 
 ---
 
