@@ -6,6 +6,31 @@ A React + Vite SPA for the StudyBuddy learning management platform. Students can
 
 ---
 
+## Screenshots
+
+### Home
+![Home](https://raw.githubusercontent.com/YiN189/studybuddy-api/main/docs/screenshots/home.png)
+
+### Student Dashboard
+![Student Dashboard](https://raw.githubusercontent.com/YiN189/studybuddy-api/main/docs/screenshots/student-dashboard.png)
+
+### Browse Courses
+![Courses](https://raw.githubusercontent.com/YiN189/studybuddy-api/main/docs/screenshots/courses.png)
+
+### Course View
+![Course View](https://raw.githubusercontent.com/YiN189/studybuddy-api/main/docs/screenshots/course-view.png)
+
+### Quiz
+![Quiz](https://raw.githubusercontent.com/YiN189/studybuddy-api/main/docs/screenshots/quiz.png)
+
+### Instructor Dashboard
+![Instructor Dashboard](https://raw.githubusercontent.com/YiN189/studybuddy-api/main/docs/screenshots/instructor-dashboard.png)
+
+### Admin Dashboard
+![Admin Dashboard](https://raw.githubusercontent.com/YiN189/studybuddy-api/main/docs/screenshots/admin-dashboard.png)
+
+---
+
 ## Team Members
 
 | Name |
